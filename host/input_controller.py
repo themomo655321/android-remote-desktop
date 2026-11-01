@@ -1,11 +1,12 @@
 """
-Windows Input Simulation Engine: Mouse, Touch, Stylus, Keyboard, and Shortcuts.
+Windows Input Simulation Engine: Mouse, Touch, Stylus, Keyboard, and Multi-Monitor Support.
 Uses Windows SendInput and user32 APIs directly for zero-latency response.
 """
 
 import ctypes
 from ctypes import wintypes
 import time
+import subprocess
 
 user32 = ctypes.windll.user32
 
@@ -114,6 +115,7 @@ class InputController:
     def __init__(self):
         self.screen_width = user32.GetSystemMetrics(0)
         self.screen_height = user32.GetSystemMetrics(1)
+        self.drag_lock_active = False
 
     def refresh_screen_size(self):
         self.screen_width = user32.GetSystemMetrics(0)
@@ -126,12 +128,20 @@ class InputController:
         """Relative cursor movement (used for trackpad mode)."""
         user32.mouse_event(MOUSEEVENTF_MOVE, int(dx), int(dy), 0, 0)
 
-    def move_mouse_absolute(self, x, y):
-        """Absolute cursor placement (used for direct touch & stylus mode)."""
-        w, h = self.refresh_screen_size()
-        clamped_x = max(0, min(w - 1, int(x)))
-        clamped_y = max(0, min(h - 1, int(y)))
-        user32.SetCursorPos(clamped_x, clamped_y)
+    def move_mouse_absolute(self, x, y, monitor_rect=None):
+        """
+        Absolute cursor placement with multi-monitor offset support.
+        If monitor_rect is given: {left, top, width, height}, maps x and y relative to that monitor.
+        """
+        if monitor_rect:
+            target_x = monitor_rect["left"] + int(x)
+            target_y = monitor_rect["top"] + int(y)
+            user32.SetCursorPos(target_x, target_y)
+        else:
+            w, h = self.refresh_screen_size()
+            clamped_x = max(0, min(w - 1, int(x)))
+            clamped_y = max(0, min(h - 1, int(y)))
+            user32.SetCursorPos(clamped_x, clamped_y)
 
     def mouse_down(self, button='left'):
         flags = {
@@ -160,8 +170,7 @@ class InputController:
         self.mouse_click(button)
 
     def mouse_wheel(self, delta_y):
-        """Vertical scroll (positive is up, negative is down)."""
-        # Windows standard wheel delta is 120
+        """Vertical scroll."""
         delta = int(delta_y * 120)
         user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, delta, 0)
 
@@ -170,10 +179,21 @@ class InputController:
         delta = int(delta_x * 120)
         user32.mouse_event(MOUSEEVENTF_HWHEEL, 0, 0, delta, 0)
 
+    # --- Click and Hold / Drag Lock ---
+
+    def toggle_drag_lock(self):
+        """Toggles click-and-hold for easy dragging."""
+        if self.drag_lock_active:
+            self.mouse_up('left')
+            self.drag_lock_active = False
+        else:
+            self.mouse_down('left')
+            self.drag_lock_active = True
+        return self.drag_lock_active
+
     # --- Keyboard & Text Input ---
 
     def send_key_event(self, vk_code, is_up=False, is_extended=False):
-        """Send virtual key event via keybd_event."""
         flags = 0
         if is_up:
             flags |= KEYEVENTF_KEYUP
@@ -191,13 +211,11 @@ class InputController:
         inputs = []
         for char in text:
             code = ord(char)
-            # Key down
             ki_down = KEYBDINPUT(0, code, KEYEVENTF_UNICODE, 0, 0)
             inp_down = INPUT(INPUT_KEYBOARD)
             inp_down.ki = ki_down
             inputs.append(inp_down)
 
-            # Key up
             ki_up = KEYBDINPUT(0, code, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, 0, 0)
             inp_up = INPUT(INPUT_KEYBOARD)
             inp_up.ki = ki_up
@@ -208,13 +226,50 @@ class InputController:
             inp_array = array_type(*inputs)
             user32.SendInput(len(inputs), inp_array, ctypes.sizeof(INPUT))
 
+    def handle_realtime_key(self, char=None, is_backspace=False, is_enter=False):
+        """Stroke-by-stroke keystroke handler for Android keyboards."""
+        if is_backspace:
+            self.press_key(VK_BACK)
+        elif is_enter:
+            self.press_key(VK_RETURN)
+        elif char:
+            self.type_unicode_text(char)
+
+    # --- Brightness Controls ---
+
+    def get_brightness(self):
+        """Fetches current laptop backlight brightness (0-100%)."""
+        try:
+            cmd = '(Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightness).CurrentBrightness'
+            res = subprocess.run(['powershell', '-NoProfile', '-Command', cmd], capture_output=True, text=True, timeout=2)
+            val = int(res.stdout.strip())
+            return max(0, min(100, val))
+        except Exception:
+            return 70
+
+    def set_brightness(self, percent):
+        """Sets laptop backlight brightness directly."""
+        try:
+            target = max(0, min(100, int(percent)))
+            cmd = f'(Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, {target})'
+            subprocess.run(['powershell', '-NoProfile', '-Command', cmd], capture_output=True, text=True, timeout=2)
+            return target
+        except Exception:
+            return None
+
+    def adjust_brightness(self, delta):
+        """Increases or decreases brightness by delta percent (e.g. +10 or -10)."""
+        curr = self.get_brightness()
+        new_val = max(0, min(100, curr + delta))
+        self.set_brightness(new_val)
+        return new_val
+
     # --- Shortcuts & Quick Actions ---
 
     def execute_shortcut(self, action_name):
         action = action_name.lower().strip()
 
         if action == "screenshot_snip":
-            # Win + Shift + S (Windows Snipping Tool)
             self.send_key_event(VK_LWIN, False)
             self.send_key_event(VK_SHIFT, False)
             self.send_key_event(ord('S'), False)
@@ -224,38 +279,38 @@ class InputController:
             self.send_key_event(VK_LWIN, True)
 
         elif action == "screenshot_prtscn":
-            # Native PrintScreen key
             self.press_key(VK_SNAPSHOT, is_extended=True)
 
         elif action == "show_desktop":
-            # Win + D
             self.send_key_event(VK_LWIN, False)
             self.press_key(ord('D'))
             self.send_key_event(VK_LWIN, True)
 
         elif action == "task_view":
-            # Win + Tab
             self.send_key_event(VK_LWIN, False)
             self.press_key(VK_TAB)
             self.send_key_event(VK_LWIN, True)
 
         elif action == "alt_tab":
-            # Alt + Tab
             self.send_key_event(VK_MENU, False)
             self.press_key(VK_TAB)
             self.send_key_event(VK_MENU, True)
 
         elif action == "lock_pc":
-            # Win + L
             user32.LockWorkStation()
 
         elif action == "task_manager":
-            # Ctrl + Shift + Esc
             self.send_key_event(VK_CONTROL, False)
             self.send_key_event(VK_SHIFT, False)
             self.press_key(VK_ESCAPE)
             self.send_key_event(VK_SHIFT, True)
             self.send_key_event(VK_CONTROL, True)
+
+        # Brightness shortcuts
+        elif action == "brightness_up":
+            self.adjust_brightness(10)
+        elif action == "brightness_down":
+            self.adjust_brightness(-10)
 
         # Media controls
         elif action == "volume_up":
@@ -289,16 +344,14 @@ class InputController:
             self.press_key(ord('A'))
             self.send_key_event(VK_CONTROL, True)
 
-        # Windows Virtual Desktops
+        # Virtual Desktops
         elif action == "desktop_left":
-            # Win + Ctrl + Left
             self.send_key_event(VK_LWIN, False)
             self.send_key_event(VK_CONTROL, False)
             self.press_key(VK_LEFT, is_extended=True)
             self.send_key_event(VK_CONTROL, True)
             self.send_key_event(VK_LWIN, True)
         elif action == "desktop_right":
-            # Win + Ctrl + Right
             self.send_key_event(VK_LWIN, False)
             self.send_key_event(VK_CONTROL, False)
             self.press_key(VK_RIGHT, is_extended=True)

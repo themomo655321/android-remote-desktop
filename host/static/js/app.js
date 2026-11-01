@@ -1,6 +1,7 @@
 /**
- * Main Application Controller
- * Handles WebSocket communication, Mode Navigation, Media, Shortcuts, and Screenshot Hub.
+ * Main Application Controller (v1.0.2)
+ * Features: Multi-Monitor Switcher, Real-Time Keystroke Typing,
+ * Laptop Backlight Brightness, Click & Hold (Drag Lock), and Reverse Scrolling.
  */
 
 class WebSocketClient {
@@ -93,7 +94,6 @@ class WebSocketClient {
   }
 }
 
-// Global App Initialization
 document.addEventListener('DOMContentLoaded', () => {
   const ws = new WebSocketClient();
 
@@ -107,17 +107,59 @@ document.addEventListener('DOMContentLoaded', () => {
   const scrollStrip = document.getElementById('scrollStrip');
   const touchpad = new TouchpadController(touchpadSurface, scrollStrip, ws);
 
-  // Initialize Native Screen Info from Server
-  ws.on('init', (data) => {
+  // Reverse Scrolling Checkbox Sync
+  const chkReverseScroll = document.getElementById('chkReverseScroll');
+  if (chkReverseScroll) {
+    chkReverseScroll.checked = touchpad.reverseScroll;
+    chkReverseScroll.addEventListener('change', (e) => {
+      touchpad.setReverseScroll(e.target.checked);
+      showToast(e.target.checked ? 'Reverse scrolling ON' : 'Standard scrolling ON');
+    });
+  }
+
+  // --- Multi-Monitor Setup ---
+  const monitorSelect = document.getElementById('monitorSelect');
+  
+  function populateMonitors(monitors, activeIndex) {
+    if (!monitorSelect || !monitors) return;
+    monitorSelect.innerHTML = '';
+    monitors.forEach((m) => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = m.name;
+      if (m.id === activeIndex) opt.selected = true;
+      monitorSelect.appendChild(opt);
+    });
+  }
+
+  if (monitorSelect) {
+    monitorSelect.addEventListener('change', (e) => {
+      const idx = parseInt(e.target.value);
+      ws.send({ type: 'select_monitor', index: idx });
+      showToast(`Switched to ${monitorSelect.options[monitorSelect.selectedIndex].text}`);
+    });
+  }
+
+  ws.on('monitor_changed', (data) => {
     if (data.screen) {
       streamer.setNativeResolution(data.screen.width, data.screen.height);
-      const resBadge = document.getElementById('resBadge');
-      if (resBadge) resBadge.textContent = `${data.screen.width}x${data.screen.height}`;
+    }
+  });
+
+  // --- WebSocket Initialization Handler ---
+  ws.on('init', (data) => {
+    if (data.monitors) {
+      populateMonitors(data.monitors, data.active_monitor);
+    }
+    if (data.screen) {
+      streamer.setNativeResolution(data.screen.width, data.screen.height);
     }
     if (data.battery) {
       updateBatteryUI(data.battery);
     }
-    // Automatically start stream if mirror tab is active
+    if (data.brightness !== undefined) {
+      updateBrightnessUI(data.brightness);
+    }
     if (currentTab === 'mirror') {
       streamer.start(30, 65, 0.75);
     }
@@ -125,9 +167,139 @@ document.addEventListener('DOMContentLoaded', () => {
 
   ws.on('system_info', (data) => {
     if (data.battery) updateBatteryUI(data.battery);
+    if (data.brightness !== undefined) updateBrightnessUI(data.brightness);
   });
 
-  // Screenshot Ready Handler
+  // --- Real-Time Mobile Keyboard Input (Stroke by Stroke) ---
+  const realtimeKbInput = document.getElementById('realtimeKbInput');
+  const activeTypingPill = document.getElementById('activeTypingPill');
+
+  function openNativeKeyboard() {
+    if (!realtimeKbInput) return;
+    realtimeKbInput.focus();
+    if (activeTypingPill) activeTypingPill.classList.add('visible');
+    showToast('⌨️ Mobile keyboard active! Start typing...');
+    if (window.navigator.vibrate) window.navigator.vibrate(15);
+  }
+
+  function closeNativeKeyboard() {
+    if (!realtimeKbInput) return;
+    realtimeKbInput.blur();
+    if (activeTypingPill) activeTypingPill.classList.remove('visible');
+  }
+
+  // Trigger buttons across header, mirror, and touchpad
+  const btnHeaderKb = document.getElementById('btnHeaderKb');
+  const btnFloatingKb = document.getElementById('btnFloatingKb');
+  const btnTouchpadKb = document.getElementById('btnTouchpadKb');
+  const btnLaunchRealtimeKb = document.getElementById('btnLaunchRealtimeKb');
+
+  [btnHeaderKb, btnFloatingKb, btnTouchpadKb, btnLaunchRealtimeKb].forEach((btn) => {
+    if (btn) btn.addEventListener('click', () => openNativeKeyboard());
+  });
+
+  if (activeTypingPill) {
+    activeTypingPill.addEventListener('click', () => closeNativeKeyboard());
+  }
+
+  if (realtimeKbInput) {
+    realtimeKbInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace') {
+        ws.send({ type: 'realtime_key', is_backspace: true });
+        if (window.navigator.vibrate) window.navigator.vibrate(8);
+      } else if (e.key === 'Enter') {
+        ws.send({ type: 'realtime_key', is_enter: true });
+        if (window.navigator.vibrate) window.navigator.vibrate(12);
+      }
+    });
+
+    realtimeKbInput.addEventListener('input', (e) => {
+      // Handles individual characters or speech-to-text text chunks
+      const val = realtimeKbInput.value;
+      if (val) {
+        for (let char of val) {
+          ws.send({ type: 'realtime_key', char: char });
+        }
+        realtimeKbInput.value = '';
+        if (window.navigator.vibrate) window.navigator.vibrate(8);
+      }
+    });
+
+    realtimeKbInput.addEventListener('blur', () => {
+      if (activeTypingPill) activeTypingPill.classList.remove('visible');
+    });
+  }
+
+  // --- Click & Hold / Drag Lock ---
+  const btnDragLock = document.getElementById('btnDragLock');
+  const btnFloatingDrag = document.getElementById('btnFloatingDrag');
+
+  function toggleDragLock() {
+    ws.send({ type: 'drag_lock_toggle' });
+  }
+
+  if (btnDragLock) btnDragLock.addEventListener('click', toggleDragLock);
+  if (btnFloatingDrag) btnFloatingDrag.addEventListener('click', toggleDragLock);
+
+  ws.on('drag_lock_status', (data) => {
+    const active = !!data.active;
+    if (btnDragLock) {
+      btnDragLock.classList.toggle('drag-lock-active', active);
+    }
+    if (btnFloatingDrag) {
+      btnFloatingDrag.classList.toggle('active', active);
+    }
+    showToast(active ? '✋ Drag Lock ON (Click & Hold)' : '✋ Drag Lock OFF');
+    if (window.navigator.vibrate) window.navigator.vibrate([20, 40]);
+  });
+
+  // --- Brightness Controls ---
+  const brightnessSlider = document.getElementById('brightnessSlider');
+  const brightnessValueText = document.getElementById('brightnessValueText');
+  const btnDim = document.getElementById('btnDim');
+  const btnBrighten = document.getElementById('btnBrighten');
+
+  function updateBrightnessUI(val) {
+    if (brightnessSlider) brightnessSlider.value = val;
+    if (brightnessValueText) brightnessValueText.textContent = `${val}%`;
+  }
+
+  if (brightnessSlider) {
+    let brightnessThrottle = null;
+    brightnessSlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      if (brightnessValueText) brightnessValueText.textContent = `${val}%`;
+
+      if (!brightnessThrottle) {
+        brightnessThrottle = setTimeout(() => {
+          ws.send({ type: 'brightness', action: 'set', value: val });
+          brightnessThrottle = null;
+        }, 80);
+      }
+    });
+  }
+
+  if (btnDim) {
+    btnDim.addEventListener('click', () => {
+      ws.send({ type: 'brightness', action: 'adjust', delta: -10 });
+      if (window.navigator.vibrate) window.navigator.vibrate(15);
+    });
+  }
+
+  if (btnBrighten) {
+    btnBrighten.addEventListener('click', () => {
+      ws.send({ type: 'brightness', action: 'adjust', delta: 10 });
+      if (window.navigator.vibrate) window.navigator.vibrate(15);
+    });
+  }
+
+  ws.on('brightness_update', (data) => {
+    if (data.value !== undefined && data.value !== null) {
+      updateBrightnessUI(data.value);
+    }
+  });
+
+  // --- Screenshot Handlers ---
   ws.on('screenshot_ready', (data) => {
     playShutterSound();
     triggerFlashEffect();
@@ -138,60 +310,18 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(data.message);
   });
 
-  // --- Tab Switching Logic ---
-  let currentTab = 'mirror';
-  const navItems = document.querySelectorAll('.nav-item');
-  const viewPanels = document.querySelectorAll('.view-panel');
-
-  navItems.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.target;
-      switchTab(target);
-    });
-  });
-
-  function switchTab(target) {
-    currentTab = target;
-    navItems.forEach((item) => {
-      item.classList.toggle('active', item.dataset.target === target);
-    });
-
-    viewPanels.forEach((panel) => {
-      panel.classList.toggle('active', panel.id === `panel-${target}`);
-    });
-
-    // Control video stream lifecycle: only stream when Screen Mirror tab is open!
-    if (target === 'mirror') {
-      streamer.start(30, 65, 0.75);
-    } else {
-      streamer.stop();
-    }
-
-    if (window.navigator.vibrate) window.navigator.vibrate(10);
-  }
-
-  // --- Header & Floating Screenshot Buttons ---
   const headerScreenshotBtn = document.getElementById('btnHeaderScreenshot');
-  if (headerScreenshotBtn) {
-    headerScreenshotBtn.addEventListener('click', () => {
-      triggerInstantScreenshot();
-    });
-  }
-
   const floatingScreenshotBtn = document.getElementById('btnFloatingScreenshot');
-  if (floatingScreenshotBtn) {
-    floatingScreenshotBtn.addEventListener('click', () => {
-      triggerInstantScreenshot();
-    });
-  }
 
   function triggerInstantScreenshot() {
-    showToast('📸 Capturing screenshot...');
+    showToast('📸 Capturing active monitor screenshot...');
     ws.send({ type: 'screenshot', action: 'capture' });
     if (window.navigator.vibrate) window.navigator.vibrate([20, 50, 20]);
   }
 
-  // Snipping Tool Button
+  if (headerScreenshotBtn) headerScreenshotBtn.addEventListener('click', triggerInstantScreenshot);
+  if (floatingScreenshotBtn) floatingScreenshotBtn.addEventListener('click', triggerInstantScreenshot);
+
   const btnSnip = document.getElementById('btnSnip');
   if (btnSnip) {
     btnSnip.addEventListener('click', () => {
@@ -200,7 +330,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // PrintScreen Button
   const btnPrtScn = document.getElementById('btnPrtScn');
   if (btnPrtScn) {
     btnPrtScn.addEventListener('click', () => {
@@ -209,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Touchpad Left / Right Buttons ---
+  // --- Touchpad Left / Right / Middle Buttons ---
   const btnMouseLeft = document.getElementById('btnMouseLeft');
   const btnMouseRight = document.getElementById('btnMouseRight');
   const btnMouseMiddle = document.getElementById('btnMouseMiddle');
@@ -249,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Media & Volume Controls ---
+  // --- Navigation & Media Shortcuts ---
   document.querySelectorAll('[data-shortcut]').forEach((el) => {
     el.addEventListener('click', () => {
       const action = el.dataset.shortcut;
@@ -258,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- Unicode Text Input ---
+  // --- Sentence Text Input & Clipboard Sync ---
   const textInputForm = document.getElementById('textInputForm');
   const textInputField = document.getElementById('textInputField');
   if (textInputForm && textInputField) {
@@ -273,7 +402,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Clipboard Push / Pull ---
   const btnPushClipboard = document.getElementById('btnPushClipboard');
   if (btnPushClipboard && textInputField) {
     btnPushClipboard.addEventListener('click', async () => {
@@ -318,22 +446,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Keep phone screen awake
-  requestWakeLock();
+  // --- Tab Switching Logic ---
+  let currentTab = 'mirror';
+  const navItems = document.querySelectorAll('.nav-item');
+  const viewPanels = document.querySelectorAll('.view-panel');
 
-  // --- Auto-Update Check Handler ---
+  navItems.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.target;
+      switchTab(target);
+    });
+  });
+
+  function switchTab(target) {
+    currentTab = target;
+    navItems.forEach((item) => {
+      item.classList.toggle('active', item.dataset.target === target);
+    });
+
+    viewPanels.forEach((panel) => {
+      panel.classList.toggle('active', panel.id === `panel-${target}`);
+    });
+
+    if (target === 'mirror') {
+      streamer.start(30, 65, 0.75);
+    } else {
+      streamer.stop();
+    }
+
+    if (window.navigator.vibrate) window.navigator.vibrate(10);
+  }
+
+  // Auto-Update Check
   const btnCheckUpdate = document.getElementById('btnCheckUpdate');
   const updateStatusText = document.getElementById('updateStatusText');
 
   if (btnCheckUpdate) {
     btnCheckUpdate.addEventListener('click', async () => {
-      // If running inside Android APK webview with native bridge
       if (window.AndroidHost && typeof window.AndroidHost.checkForUpdates === 'function') {
         window.AndroidHost.checkForUpdates();
         return;
       }
 
-      // If running in browser or PWA
       showToast('Checking for updates...');
       if (updateStatusText) updateStatusText.textContent = 'Checking...';
 
@@ -356,9 +510,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  requestWakeLock();
 });
 
-// UI Helpers
 function updateBatteryUI(battery) {
   const badge = document.getElementById('batteryBadge');
   if (!badge) return;
@@ -437,7 +592,6 @@ async function requestWakeLock() {
   if ('wakeLock' in navigator) {
     try {
       await navigator.wakeLock.request('screen');
-      console.log('Screen WakeLock active');
     } catch (err) {}
   }
 }

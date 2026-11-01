@@ -1,6 +1,7 @@
 /**
  * High-performance Screen Mirroring & Interactive Pointer/Stylus Handler
- * Supports: Hardware ImageBitmap rendering, Pinch-to-Zoom, Direct Touch, and Advan Sketsa 2 Stylus Pen.
+ * Supports: Multi-Monitor targets, Hardware ImageBitmap rendering, Pinch-to-Zoom,
+ * Direct Touch, and Advan Sketsa 2 Stylus Pen.
  */
 
 class ScreenStreamer {
@@ -15,8 +16,6 @@ class ScreenStreamer {
     
     // Zoom & Pan state
     this.scale = 1.0;
-    this.panX = 0;
-    this.panY = 0;
     this.initialPinchDistance = 0;
     this.initialScale = 1.0;
     
@@ -24,7 +23,6 @@ class ScreenStreamer {
     this.activePointers = new Map();
     this.isDragging = false;
     this.lastPointerPos = null;
-    this.isDirectTouch = true; // True: tap = click. False: virtual cursor
     
     this.setupPointerEvents();
   }
@@ -60,18 +58,13 @@ class ScreenStreamer {
 
     try {
       const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
-      // createImageBitmap decodes asynchronously off the main thread for maximum 60fps performance
       const bitmap = await createImageBitmap(blob);
       
-      // Render to canvas
       this.ctx.drawImage(bitmap, 0, 0, this.canvas.width, this.canvas.height);
       bitmap.close();
 
-      // Flow control backpressure acknowledgement
       this.ws.send({ type: 'frame_ack' });
     } catch (err) {
-      console.error('Frame decode error:', err);
-      // Still ack so we do not freeze
       this.ws.send({ type: 'frame_ack' });
     }
   }
@@ -83,12 +76,9 @@ class ScreenStreamer {
     el.addEventListener('pointermove', (e) => this.onPointerMove(e), { passive: false });
     el.addEventListener('pointerup', (e) => this.onPointerUp(e), { passive: false });
     el.addEventListener('pointercancel', (e) => this.onPointerUp(e), { passive: false });
-
-    // Prevent default context menu on right click / long press
     el.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
-  // Translates client pointer coordinates into Laptop Native Screen (X, Y)
   getNativeCoordinates(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
     const clientRelX = clientX - rect.left;
@@ -111,7 +101,7 @@ class ScreenStreamer {
     this.canvas.setPointerCapture(e.pointerId);
     this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    // Handle 2-finger pinch-to-zoom
+    // 2-finger pinch-to-zoom
     if (this.activePointers.size === 2) {
       const [p1, p2] = Array.from(this.activePointers.values());
       this.initialPinchDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
@@ -123,18 +113,14 @@ class ScreenStreamer {
       const coords = this.getNativeCoordinates(e.clientX, e.clientY);
       this.lastPointerPos = coords;
 
-      // Detect stylus pen (Advan Sketsa 2 stylus pen support!)
-      const isPen = (e.pointerType === 'pen');
       const isRightClick = (e.buttons === 2 || e.button === 2);
 
-      // Move cursor to touch/pen location
       this.ws.send({
         type: 'mouse_move_abs',
         x: coords.x,
         y: coords.y
       });
 
-      // Press mouse button down (supports stylus drag/drawing)
       this.ws.send({
         type: 'mouse_down',
         button: isRightClick ? 'right' : 'left'
@@ -147,10 +133,9 @@ class ScreenStreamer {
 
   onPointerMove(e) {
     e.preventDefault();
-    if (!this.activePointers.has(e.pointerId)) return;
+    if (!this.activeTouches && !this.activePointers.has(e.pointerId)) return;
     this.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    // 2-Finger Pinch Zooming
     if (this.activePointers.size === 2) {
       const [p1, p2] = Array.from(this.activePointers.values());
       const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
@@ -162,7 +147,6 @@ class ScreenStreamer {
       return;
     }
 
-    // 1-Finger / Stylus Dragging
     if (this.activePointers.size === 1 && this.isDragging) {
       const coords = this.getNativeCoordinates(e.clientX, e.clientY);
       this.ws.send({

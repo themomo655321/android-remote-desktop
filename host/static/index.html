@@ -13,6 +13,12 @@
 </head>
 <body>
 
+  <!-- Hidden input for real-time mobile typing (Gboard / Tablet Keyboard) -->
+  <input id="realtimeKbInput" class="realtime-kb-hidden-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" inputmode="text">
+  <div id="activeTypingPill" class="active-typing-pill">
+    <span>⌨️ Live Typing Active (Tap to close)</span>
+  </div>
+
   <!-- Top Header Bar -->
   <header class="app-header">
     <div class="brand">
@@ -20,15 +26,27 @@
       <span class="brand-title">PC Remote</span>
     </div>
 
+    <!-- Multi-Monitor Switcher Dropdown -->
+    <div class="monitor-select-wrapper" title="Select Monitor">
+      <span style="font-size: 0.8rem; margin-right: 4px;">🖥️</span>
+      <select id="monitorSelect" class="monitor-dropdown">
+        <option value="0">Display 1 (Main)</option>
+      </select>
+    </div>
+
     <div class="header-badges">
-      <span id="resBadge" class="badge">-- x --</span>
       <span id="batteryBadge" class="badge">🔋 --%</span>
     </div>
 
     <div class="header-actions">
+      <!-- Direct Keyboard Toggle -->
+      <button id="btnHeaderKb" class="btn-header-kb" title="Open Mobile Keyboard to Type">
+        <span>⌨️</span> Type
+      </button>
+
       <!-- High-visibility Screenshot Button -->
       <button id="btnHeaderScreenshot" class="btn-header-screenshot" title="Take Instant Screenshot">
-        <span>📸</span> Screenshot
+        <span>📸</span>
       </button>
     </div>
   </header>
@@ -43,23 +61,36 @@
         
         <!-- Floating controls on top of mirror -->
         <div class="mirror-floating-controls">
+          <button id="btnFloatingDrag" class="floating-btn" title="Toggle Drag Lock (Click & Hold)">✋ Drag</button>
+          <button id="btnFloatingKb" class="floating-btn" title="Open Native Keyboard">⌨️</button>
           <button id="btnResetZoom" class="floating-btn" title="Reset Zoom">🔍 1x</button>
           <button id="btnToggleFullscreen" class="floating-btn" title="Fullscreen">⛶</button>
           <button id="btnFloatingScreenshot" class="floating-btn" title="Screenshot">📸</button>
         </div>
 
-        <div class="mirror-hint">Direct Touch & Stylus Active • Pinch to Zoom</div>
+        <div class="mirror-hint">Direct Touch & Stylus • Multi-Monitor Ready</div>
       </div>
     </section>
 
     <!-- 2. Smart Touchpad Panel (Phone Optimized) -->
     <section id="panel-touchpad" class="view-panel">
       <div class="touchpad-container">
+        
+        <!-- Top bar with Reverse Scroll setting & Keyboard -->
+        <div class="touchpad-top-bar">
+          <label class="setting-toggle">
+            <input type="checkbox" id="chkReverseScroll">
+            <span>Reverse Scrolling</span>
+          </label>
+          <button id="btnTouchpadKb" class="btn-key" style="padding: 4px 10px; font-size: 0.75rem;">⌨️ Open Keyboard</button>
+        </div>
+
         <div class="touchpad-main">
           <div id="touchpadSurface" class="touchpad-surface">
             <div class="touchpad-guide">
               <p><strong>Touchpad Surface</strong></p>
               <p>1-Finger Drag : Move Cursor</p>
+              <p>Double-Tap & Hold : Drag Windows</p>
               <p>1-Finger Tap : Left Click</p>
               <p>2-Finger Tap : Right Click</p>
               <p>2-Finger Drag : Scroll</p>
@@ -73,11 +104,15 @@
           </div>
         </div>
 
-        <!-- Mouse Buttons -->
+        <!-- Mouse Buttons Row with Drag Lock -->
         <div class="touchpad-buttons">
-          <button id="btnMouseLeft" class="mouse-btn">Left Click</button>
-          <button id="btnMouseMiddle" class="mouse-btn" style="flex: 0.6;">Wheel</button>
-          <button id="btnMouseRight" class="mouse-btn">Right Click</button>
+          <button id="btnMouseLeft" class="mouse-btn" style="flex: 1.1;">Left Click</button>
+          <button id="btnDragLock" class="mouse-btn" style="flex: 0.9; background: var(--bg-tertiary);" title="Click and Hold to Drag">
+            <span style="font-size: 1.1rem;">✋</span>
+            <span style="font-size: 0.72rem;">Drag Lock</span>
+          </button>
+          <button id="btnMouseMiddle" class="mouse-btn" style="flex: 0.7;">Wheel</button>
+          <button id="btnMouseRight" class="mouse-btn" style="flex: 1.1;">Right Click</button>
         </div>
       </div>
     </section>
@@ -85,6 +120,19 @@
     <!-- 3. Media & System Controls Panel -->
     <section id="panel-media" class="view-panel">
       <div class="media-container">
+
+        <!-- Laptop Screen Brightness Card -->
+        <div class="card" style="border-color: rgba(245, 158, 11, 0.3);">
+          <div class="card-title" style="color: #fbbf24;">
+            <span>☀️ Laptop Screen Brightness</span>
+            <span id="brightnessValueText" style="margin-left: auto; font-size: 0.8rem; color: #fff;">70%</span>
+          </div>
+          <div class="volume-row">
+            <button class="btn-ctrl" id="btnDim" title="Dim (-10%)">🔅 -10%</button>
+            <input type="range" id="brightnessSlider" class="custom-slider" min="0" max="100" value="70">
+            <button class="btn-ctrl" id="btnBrighten" title="Brighten (+10%)">🔆 +10%</button>
+          </div>
+        </div>
         
         <!-- Master Volume Card -->
         <div class="card">
@@ -165,7 +213,7 @@
           <div class="grid-3">
             <button id="btnHeaderScreenshotCard" class="action-tile" style="background: var(--accent); color: white;" onclick="document.getElementById('btnHeaderScreenshot').click()">
               <span class="icon">📷</span>
-              <span>Capture & Save</span>
+              <span>Capture Active</span>
             </button>
             <button id="btnSnip" class="action-tile">
               <span class="icon">✂️</span>
@@ -178,11 +226,16 @@
           </div>
         </div>
 
-        <!-- Text Input & Clipboard Sync -->
+        <!-- Real-Time Typing & Full Text Input -->
         <div class="card">
-          <div class="card-title">⌨️ Type Text or Paste to Laptop</div>
+          <div class="card-title">⌨️ Type to PC (Real-Time or Sentence)</div>
+          <div style="margin-bottom: 10px;">
+            <button id="btnLaunchRealtimeKb" class="action-tile" style="width: 100%; flex-direction: row; justify-content: center; padding: 12px; background: var(--accent); color: white; gap: 8px;">
+              <span>⌨️ Open Native Keyboard for Real-Time Typing</span>
+            </button>
+          </div>
           <form id="textInputForm" class="text-input-box">
-            <input type="text" id="textInputField" class="input-field" placeholder="Type words, links, emojis..." autocomplete="off">
+            <input type="text" id="textInputField" class="input-field" placeholder="Or paste full text / URL..." autocomplete="off">
             <button type="submit" class="btn-send">Send</button>
           </form>
           <div style="margin-top: 10px;">
@@ -225,7 +278,7 @@
         <div class="card">
           <div class="card-title">ℹ️ App Info & Auto Update</div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.85rem; color: var(--text-muted);">
-            <span>Version: <strong style="color: #fff;">v1.0.1</strong></span>
+            <span>Version: <strong style="color: #fff;">v1.0.2</strong></span>
             <span id="updateStatusText">Ready</span>
           </div>
           <button id="btnCheckUpdate" class="action-tile" style="width: 100%; flex-direction: row; justify-content: center; padding: 12px; gap: 8px;">
@@ -269,7 +322,7 @@
       <div class="modal-body">
         <img id="screenshotPreviewImg" src="" alt="Screenshot Preview">
         <div class="modal-actions">
-          <button id="btnDownloadScreenshot" class="btn-modal primary">⬇️ Save Image</button>
+          <button id="btnDownloadScreenshot" class="btn-modal">⬇️ Save Image</button>
         </div>
       </div>
     </div>
