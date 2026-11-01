@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>PC Remote - Connection Hub</title>
+  <style>
+    :root {
+      --bg-primary: #0f1217;
+      --bg-secondary: #1a1e26;
+      --bg-tertiary: #252b37;
+      --bg-card: #202632;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --border: #2e3646;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .badge-version {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-refresh {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .btn-refresh:active {
+      transform: scale(0.96);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .card-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Laptops List */
+    .laptops-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .laptop-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .laptop-card:active {
+      transform: scale(0.98);
+    }
+
+    .laptop-card.online {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .laptop-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .laptop-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .status-dot.online {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .status-dot.checking {
+      background: var(--warning);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    .laptop-ip {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .laptop-details {
+      font-size: 0.72rem;
+      color: #60a5fa;
+    }
+
+    .btn-connect {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-connect:disabled {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 6px;
+      margin-left: 6px;
+    }
+
+    /* Add Form */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-field {
+      flex: 1;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-add {
+      background: var(--bg-tertiary);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-add:active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Troubleshooting Accordion */
+    .troubleshoot-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: #60a5fa;
+    }
+
+    .troubleshoot-content {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .step-box {
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .step-title {
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .code-snippet {
+      font-family: monospace;
+      background: rgba(0,0,0,0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #93c5fd;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(26, 30, 38, 0.95);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Top Header -->
+    <header class="header">
+      <div class="brand">
+        <span style="font-size: 1.3rem;">💻</span>
+        <div>
+          <h1>PC Remote</h1>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge-version">v1.0.4</span>
+        <button id="btnRefreshAll" class="btn-refresh" title="Scan and Test Laptops">
+          <span>🔄</span> Refresh
+        </button>
+      </div>
+    </header>
+
+    <!-- Saved Laptops Section -->
+    <div class="card">
+      <div class="card-title">
+        <span>Available Laptops</span>
+        <span id="scanStatusText" style="font-size: 0.75rem; text-transform: none; color: var(--text-muted);">Ready</span>
+      </div>
+      
+      <div id="laptopsContainer" class="laptops-list">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Add Laptop Section -->
+    <div class="card">
+      <div class="card-title">➕ Add Another Laptop</div>
+      <div class="form-group">
+        <div class="input-row">
+          <input type="text" id="inputPcName" class="input-field" placeholder="Nickname (e.g. Work Laptop)">
+          <input type="text" id="inputPcIp" class="input-field" placeholder="IP Address (e.g. 192.168.1.45)">
+        </div>
+        <button id="btnSavePc" class="btn-add">
+          <span>💾</span> Save Laptop
+        </button>
+      </div>
+    </div>
+
+    <!-- Interactive Troubleshooting Guide -->
+    <div class="card" style="border-color: rgba(245, 158, 11, 0.3);">
+      <div id="btnToggleTroubleshoot" class="troubleshoot-header">
+        <span>🛠️ Can't connect to Laptop #2? Tap for Help</span>
+        <span id="troubleshootArrow">▼</span>
+      </div>
+
+      <div id="troubleshootBody" class="troubleshoot-content">
+        <div class="step-box">
+          <div class="step-title">1. Is the server running on Laptop #2?</div>
+          <div>Make sure you double-clicked <span class="code-snippet">start_server.bat</span> on Laptop #2 and left the black terminal window open.</div>
+        </div>
+
+        <div class="step-box">
+          <div class="step-title">2. Windows Firewall Blocking Port 5000 (Most Common!)</div>
+          <div>Windows Firewall on Laptop #2 often blocks incoming connections by default. On Laptop #2, right-click <span class="code-snippet">allow_firewall.bat</span> and select <strong>Run as administrator</strong> to unblock port 5000 in 1 second!</div>
+        </div>
+
+        <div class="step-box">
+          <div class="step-title">3. Wi-Fi Profile: Set to 'Private' (Not 'Public')</div>
+          <div>Windows blocks all local network sharing if your Wi-Fi is marked as "Public Network". On Laptop #2: Open Windows Settings &gt; Network &amp; internet &gt; Wi-Fi &gt; tap your network name &gt; change to <strong>Private network</strong>.</div>
+        </div>
+
+        <div class="step-box">
+          <div class="step-title">4. Verify Exact IP Address on Laptop #2</div>
+          <div>Each laptop has a different IP. On Laptop #2, open Command Prompt, type <span class="code-snippet">ipconfig</span>, and look for your <strong>IPv4 Address</strong> (e.g. 192.168.1.XX).</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="toastBox" class="toast"></div>
+
+  <script>
+    const DEFAULT_LAPTOPS = [
+      { name: "Laptop 1 (Personal)", ip: "192.168.1.21", port: "5000" }
+    ];
+
+    function getLaptops() {
+      try {
+        const raw = localStorage.getItem("pcremote_devices");
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return DEFAULT_LAPTOPS;
+    }
+
+    function saveLaptops(list) {
+      localStorage.setItem("pcremote_devices", JSON.stringify(list));
+    }
+
+    const container = document.getElementById("laptopsContainer");
+    const scanStatusText = document.getElementById("scanStatusText");
+    const toastBox = document.getElementById("toastBox");
+
+    function showToast(msg) {
+      toastBox.textContent = msg;
+      toastBox.style.display = "block";
+      setTimeout(() => { toastBox.style.display = "none"; }, 2500);
+    }
+
+    // Ping / Test connection to a laptop
+    async function testLaptopConnection(ip, port) {
+      const url = `http://${ip}:${port}/api/status`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          return { online: true, data: data };
+        }
+      } catch (e) {}
+      return { online: false };
+    }
+
+    async function renderAndScan() {
+      const laptops = getLaptops();
+      container.innerHTML = "";
+      scanStatusText.textContent = "Scanning...";
+
+      for (let i = 0; i < laptops.length; i++) {
+        const pc = laptops[i];
+        const card = document.createElement("div");
+        card.className = "laptop-card";
+        card.id = `pc-card-${i}`;
+
+        card.innerHTML = `
+          <div class="laptop-info">
+            <div class="laptop-name-row">
+              <span id="dot-${i}" class="status-dot checking"></span>
+              <span>${pc.name}</span>
+            </div>
+            <div class="laptop-ip">${pc.ip}:${pc.port}</div>
+            <div id="details-${i}" class="laptop-details">Checking status...</div>
+          </div>
+          <div style="display:flex; align-items:center;">
+            <button id="btn-${i}" class="btn-connect" disabled>Connect</button>
+            ${laptops.length > 1 ? `<button class="btn-delete" data-index="${i}">🗑️</button>` : ''}
+          </div>
+        `;
+
+        container.appendChild(card);
+
+        // Delete button
+        const delBtn = card.querySelector(".btn-delete");
+        if (delBtn) {
+          delBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const idx = parseInt(delBtn.dataset.index);
+            const updated = getLaptops().filter((_, k) => k !== idx);
+            saveLaptops(updated);
+            renderAndScan();
+            showToast("Laptop removed");
+          });
+        }
+
+        // Connect button
+        const connectBtn = card.querySelector(`#btn-${i}`);
+        connectBtn.addEventListener("click", () => {
+          connectToPc(pc.ip, pc.port);
+        });
+
+        // Test connection in background
+        testLaptopConnection(pc.ip, pc.port).then((result) => {
+          const dot = document.getElementById(`dot-${i}`);
+          const details = document.getElementById(`details-${i}`);
+          const cBtn = document.getElementById(`btn-${i}`);
+          const cCard = document.getElementById(`pc-card-${i}`);
+
+          if (result.online) {
+            dot.className = "status-dot online";
+            cCard.classList.add("online");
+            const d = result.data;
+            const bat = d.battery ? `${d.battery.percent}%` : '';
+            const res = d.screen ? `${d.screen.width}x${d.screen.height}` : '';
+            details.textContent = `🟢 Online • ${res} ${bat ? '• 🔋 ' + bat : ''}`;
+            cBtn.disabled = false;
+            cBtn.textContent = "Connect";
+          } else {
+            dot.className = "status-dot";
+            details.textContent = "🔴 Offline / Unreachable";
+            cBtn.disabled = false;
+            cBtn.textContent = "Try Anyway";
+          }
+        });
+      }
+
+      scanStatusText.textContent = "Scan complete";
+    }
+
+    function connectToPc(ip, port) {
+      showToast(`Connecting to ${ip}:${port}...`);
+      if (window.AndroidHost && typeof window.AndroidHost.switchLaptop === 'function') {
+        window.AndroidHost.switchLaptop(`${ip}:${port}`);
+      } else {
+        window.location.href = `http://${ip}:${port}`;
+      }
+    }
+
+    // Add Laptop Form
+    document.getElementById("btnSavePc").addEventListener("click", () => {
+      const nameInput = document.getElementById("inputPcName");
+      const ipInput = document.getElementById("inputPcIp");
+
+      let name = (nameInput.value || "Laptop").trim();
+      let ip = (ipInput.value || "").trim();
+
+      if (!ip) {
+        showToast("Please enter an IP address");
+        return;
+      }
+
+      let port = "5000";
+      if (ip.includes(":")) {
+        const parts = ip.split(":");
+        ip = parts[0];
+        port = parts[1];
+      }
+
+      const laptops = getLaptops();
+      laptops.push({ name: name, ip: ip, port: port });
+      saveLaptops(laptops);
+
+      nameInput.value = "";
+      ipInput.value = "";
+      showToast("Laptop added!");
+      renderAndScan();
+    });
+
+    // Refresh Button
+    document.getElementById("btnRefreshAll").addEventListener("click", () => {
+      renderAndScan();
+      showToast("Scanning network for laptops...");
+    });
+
+    // Troubleshooting Toggle
+    const btnTroubleshoot = document.getElementById("btnToggleTroubleshoot");
+    const troubleshootBody = document.getElementById("troubleshootBody");
+    const troubleshootArrow = document.getElementById("troubleshootArrow");
+
+    btnTroubleshoot.addEventListener("click", () => {
+      const isOpen = troubleshootBody.style.display === "flex";
+      troubleshootBody.style.display = isOpen ? "none" : "flex";
+      troubleshootArrow.textContent = isOpen ? "▼" : "▲";
+    });
+
+    // Initial scan
+    renderAndScan();
+  </script>
+</body>
+</html>

@@ -33,6 +33,10 @@ if %errorlevel% neq 0 (
 echo.
 echo Launching host server...
 echo.
+echo [TIP] If your tablet cannot connect:
+echo   - Make sure your tablet is on the SAME Wi-Fi network.
+echo   - Run 'allow_firewall.bat' as Administrator to unblock Windows Firewall.
+echo.
 
 python host\server.py
 

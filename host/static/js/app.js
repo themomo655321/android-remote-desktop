@@ -274,6 +274,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const btnOpenHub = document.getElementById('btnOpenHub');
+  if (btnOpenHub) {
+    btnOpenHub.addEventListener('click', () => {
+      if (window.AndroidHost && typeof window.AndroidHost.openDashboard === 'function') {
+        window.AndroidHost.openDashboard();
+      } else {
+        if (btnPcSwitcher) btnPcSwitcher.click();
+      }
+    });
+  }
+
   // --- Multi-Monitor Setup ---
   const monitorSelect = document.getElementById('monitorSelect');
   

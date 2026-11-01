@@ -46,25 +46,28 @@ jobs:
       - name: Publish Release to GitHub
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.3
-          name: "PC Remote v1.0.3 (Direct APK Download)"
+          tag_name: v1.0.4
+          name: "PC Remote v1.0.4 (Connection Hub & Multi-PC Troubleshooter)"
           body: |
-            ## 📱 PC Remote & Screen Mirror for Android (v1.0.3)
-            Major Multi-Laptop update!
+            ## 📱 PC Remote & Screen Mirror for Android (v1.0.4)
+            Major connection and startup experience overhaul!
 
-            ### ✨ What's New in v1.0.3:
-            * **💻 Multi-Laptop Switcher**: Save multiple laptops (Personal Laptop, Work Laptop) and switch between them in 1-tap from your tablet header!
-            * **🚀 Auto-Install Host Script**: Added `setup_laptop_2.bat` for 1-click automatic host setup on any second Windows laptop.
-            * **🖥️ Extended Monitor & Multi-Display Support**: Display 1, Display 2, or All Displays.
-            * **⌨️ Real-Time Mobile Keystrokes**: Stroke-by-stroke typing from Gboard / tablet keyboard dock.
-            * **☀️ Laptop Screen Brightness**: Direct backlight control (Dim, Brighten, Slider).
-            * **✋ Drag Lock**: Click and hold to drag windows and select text.
-            * **🔄 Reverse Scrolling Setting**: Invert scroll direction.
+            ### ✨ What's New in v1.0.4:
+            * **🚀 Brand New Connection Hub Dashboard**: Instant 0ms startup menu with live online/offline status for all your laptops!
+            * **🔄 Network Refresh & Live Ping**: Tap "Refresh" to test and detect reachable laptops in real-time.
+            * **🛡️ Windows Firewall Helper (`allow_firewall.bat`)**: 1-click script for Laptop #2 to open Port 5000 in 1 second.
+            * **🛠️ Built-in Troubleshooting Guide**: Step-by-step help right in the app if a laptop fails to connect.
+            * **🔑 Permanent Keystore Signing**: Eliminates "App not installed" update errors permanently.
+            * **🏠 Home / Hub Button & Back Navigation**: Press Back or tap the Hub icon anytime to return to your laptops menu.
 
             ### 🚀 Quick Start
-            1. Download `PCRemote.apk` below on your tablet or phone.
-            2. On Laptop #1 and Laptop #2, run `start_server.bat`.
-            3. Tap the laptop switcher pill in the top header on your tablet to switch between laptops instantly!
-          files: release-artifacts/PCRemote.apk
+            1. Download and install `PCRemote.apk` below on your tablet or phone.
+            2. On your laptops, run `start_server.bat` (and `allow_firewall.bat` if on a new laptop).
+            3. Open PC Remote on your tablet—your laptops will be tested and ready to connect!
+          files: |
+            release-artifacts/PCRemote.apk
+            allow_firewall.bat
+            start_server.bat
+            setup_laptop_2.bat
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

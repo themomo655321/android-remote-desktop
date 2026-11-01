@@ -14,10 +14,11 @@ import android.view.View
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -34,11 +35,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private val PREFS_NAME = "PCRemotePrefs"
     private val KEY_LAST_IP = "last_ip"
-    private val DEFAULT_PORT = "5000"
 
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private var pendingApkFile: File? = null
+    private var backPressedOnce = false
 
     private val GITHUB_REPO = "themomo655321/android-remote-desktop"
 
@@ -46,19 +47,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Keep screen on during remote control session
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
         setupWebView()
 
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val savedIp = prefs.getString(KEY_LAST_IP, "192.168.1.21") ?: "192.168.1.21"
+        // Load the offline Connection Hub Dashboard instantly
+        loadDashboard()
 
-        promptForHost(savedIp)
-
-        // Check for updates in the background
+        // Silent background check for updates
         checkForAppUpdates(silentIfLatest = true)
     }
 
@@ -71,46 +69,42 @@ class MainActivity : AppCompatActivity() {
                 domStorageEnabled = true
                 databaseEnabled = true
                 mediaPlaybackRequiresUserGesture = false
-                cacheMode = WebSettings.LOAD_NO_CACHE
+                cacheMode = WebSettings.LOAD_DEFAULT
                 useWideViewPort = true
                 loadWithOverviewMode = true
+                allowFileAccess = true
             }
-            // Add JS interface so Web UI can also trigger update check
+
             addJavascriptInterface(WebAppInterface(this@MainActivity), "AndroidHost")
-            webViewClient = WebViewClient()
+
+            webViewClient = object : WebViewClient() {
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        mainHandler.post {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Could not connect to laptop. Check firewall and IP.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            loadDashboard()
+                        }
+                    }
+                }
+            }
+
             webChromeClient = WebChromeClient()
         }
     }
 
-    private fun promptForHost(currentIp: String) {
-        val input = EditText(this).apply {
-            setText(currentIp)
-            hint = "e.g. 192.168.1.21"
-            setSelection(text.length)
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Connect to Laptop Host")
-            .setMessage("Enter your Windows laptop's local IP address:")
-            .setView(input)
-            .setPositiveButton("Connect") { _, _ ->
-                val ip = input.text.toString().trim()
-                if (ip.isNotEmpty()) {
-                    getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                        .edit()
-                        .putString(KEY_LAST_IP, ip)
-                        .apply()
-                    loadRemoteUrl("http://$ip:$DEFAULT_PORT")
-                }
-            }
-            .setNegativeButton("Default") { _, _ ->
-                loadRemoteUrl("http://$currentIp:$DEFAULT_PORT")
-            }
-            .setCancelable(false)
-            .show()
+    fun loadDashboard() {
+        webView.loadUrl("file:///android_asset/index.html")
     }
 
-    private fun loadRemoteUrl(url: String) {
+    fun loadRemoteUrl(url: String) {
         webView.loadUrl(url)
     }
 
@@ -160,7 +154,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 if (!silentIfLatest) {
                     mainHandler.post {
-                        Toast.makeText(this, "Could not check for updates: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Could not check updates: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -252,7 +246,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun promptInstallApk(apkFile: File) {
-        // Android 8.0+ Unknown sources check
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!packageManager.canRequestPackageInstalls()) {
                 AlertDialog.Builder(this)
@@ -301,10 +294,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
+        val currentUrl = webView.url ?: ""
+        if (!currentUrl.startsWith("file:///android_asset/")) {
+            // Return to the main Connection Hub Dashboard
+            loadDashboard()
+            Toast.makeText(this, "Returned to Connection Hub", Toast.LENGTH_SHORT).show()
         } else {
-            super.onBackPressed()
+            if (backPressedOnce) {
+                super.onBackPressed()
+                return
+            }
+            this.backPressedOnce = true
+            Toast.makeText(this, "Press BACK again to exit", Toast.LENGTH_SHORT).show()
+            mainHandler.postDelayed({ backPressedOnce = false }, 2000)
         }
     }
 
@@ -324,6 +326,13 @@ class MainActivity : AppCompatActivity() {
                     .putString(activity.KEY_LAST_IP, ip)
                     .apply()
                 activity.loadRemoteUrl("http://$targetHost")
+            }
+        }
+
+        @JavascriptInterface
+        fun openDashboard() {
+            activity.mainHandler.post {
+                activity.loadDashboard()
             }
         }
     }
