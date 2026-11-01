@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 title PC Remote & Screen Mirror Server
 color 0B
 cls

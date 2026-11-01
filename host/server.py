@@ -31,7 +31,7 @@ input_controller = InputController()
 local_ip = SystemManager.get_local_ip()
 HOSTNAME = socket.gethostname()
 PORT = 5000
-CURRENT_VERSION = "1.0.3"
+CURRENT_VERSION = "1.0.4"
 
 STATIC_DIR = BASE_DIR / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)

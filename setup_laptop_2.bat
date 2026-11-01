@@ -37,6 +37,9 @@ echo  SUCCESS! PC Remote Host is installed on this laptop!
 echo  A shortcut named 'Start PC Remote' has been created on your Desktop.
 echo ======================================================================
 echo.
+echo [Firewall Setup] Opening port 5000 in Windows Firewall...
+powershell -Command "Start-Process '%TARGET_DIR%\allow_firewall.bat' -Verb RunAs"
+echo.
 echo Launching server now...
 cd /d "%TARGET_DIR%"
 start "" "%TARGET_DIR%\start_server.bat"
