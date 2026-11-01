@@ -4,6 +4,19 @@ A high-performance remote control and low-latency screen mirroring application d
 
 ---
 
+## 📥 Direct APK Download for Your Tablet & Phone
+
+You can download and install the ready-to-run APK directly onto your **Advan Sketsa 2** or phone without building anything:
+
+👉 **[Download Latest PCRemote.apk from GitHub Releases](https://github.com/themomo655321/android-remote-desktop/releases/latest)**
+
+1. On your Advan Sketsa 2, tap the link above and download `PCRemote.apk`.
+2. Tap the downloaded file to install (allow "Install from Unknown Sources" if prompted).
+3. On your laptop, run `start_server.bat` (or `python host\server.py`).
+4. Open the **PC Remote** app on your tablet, type your laptop's IP address (e.g. `192.168.1.21`), and tap **Connect**!
+
+---
+
 ## ✨ Features
 
 ### 📸 Screenshot Hub

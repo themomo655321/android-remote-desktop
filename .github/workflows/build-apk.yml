@@ -1,0 +1,60 @@
+name: Build and Release Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build APK with Gradle
+        run: |
+          cd android_client
+          gradle assembleDebug --no-daemon
+
+      - name: Prepare APK Release Artifact
+        run: |
+          mkdir -p release-artifacts
+          cp android_client/app/build/outputs/apk/debug/*.apk release-artifacts/PCRemote.apk
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PCRemote-debug-apk
+          path: release-artifacts/PCRemote.apk
+
+      - name: Publish Release to GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: "PC Remote v1.0.0 (Direct APK Download)"
+          body: |
+            ## 📱 PC Remote & Screen Mirror for Android
+            Download and install this APK directly on your **Advan Sketsa 2** or Android phone!
+
+            ### 🚀 Quick Start
+            1. Download `PCRemote.apk` below on your tablet or phone.
+            2. Tap the downloaded file to install (allow "Install from Unknown Sources" if prompted).
+            3. On your laptop, run `start_server.bat` (make sure both laptop and tablet are on the same Wi-Fi).
+            4. Open the PC Remote app on your tablet, enter your laptop's IP address (e.g. `192.168.1.21`), and tap **Connect**!
+          files: release-artifacts/PCRemote.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
