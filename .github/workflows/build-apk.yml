@@ -46,24 +46,25 @@ jobs:
       - name: Publish Release to GitHub
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.2
-          name: "PC Remote v1.0.2 (Direct APK Download)"
+          tag_name: v1.0.3
+          name: "PC Remote v1.0.3 (Direct APK Download)"
           body: |
-            ## 📱 PC Remote & Screen Mirror for Android (v1.0.2)
-            Major feature update for **Advan Sketsa 2** and Android phones!
+            ## 📱 PC Remote & Screen Mirror for Android (v1.0.3)
+            Major Multi-Laptop update!
 
-            ### ✨ What's New in v1.0.2:
-            * **🖥️ Extended Monitor & Multi-Display Switcher**: Easily switch between Display 1 (Laptop), Display 2 (Extended Monitor), or All Displays (Combined)!
-            * **⌨️ Real-Time Mobile Typing**: Open your native Android keyboard (Gboard, Samsung, tablet keyboard dock) and type stroke-by-stroke directly to Windows.
-            * **☀️ Laptop Screen Brightness**: Control laptop backlight directly from your tablet (Dim -10%, Brighten +10%, and 0-100% Slider).
-            * **✋ Drag Lock (Click & Hold)**: Tap "Drag Lock" to lock left-click down for easy window dragging, text selection, and moving files.
-            * **🔄 Reverse Scrolling Setting**: Option to invert trackpad scrolling direction to match natural scrolling.
+            ### ✨ What's New in v1.0.3:
+            * **💻 Multi-Laptop Switcher**: Save multiple laptops (Personal Laptop, Work Laptop) and switch between them in 1-tap from your tablet header!
+            * **🚀 Auto-Install Host Script**: Added `setup_laptop_2.bat` for 1-click automatic host setup on any second Windows laptop.
+            * **🖥️ Extended Monitor & Multi-Display Support**: Display 1, Display 2, or All Displays.
+            * **⌨️ Real-Time Mobile Keystrokes**: Stroke-by-stroke typing from Gboard / tablet keyboard dock.
+            * **☀️ Laptop Screen Brightness**: Direct backlight control (Dim, Brighten, Slider).
+            * **✋ Drag Lock**: Click and hold to drag windows and select text.
+            * **🔄 Reverse Scrolling Setting**: Invert scroll direction.
 
             ### 🚀 Quick Start
             1. Download `PCRemote.apk` below on your tablet or phone.
-            2. Tap the downloaded file to install (if you already have v1.0.1, the in-app updater can also update directly).
-            3. On your laptop, run `start_server.bat`.
-            4. Open the PC Remote app on your tablet and connect!
+            2. On Laptop #1 and Laptop #2, run `start_server.bat`.
+            3. Tap the laptop switcher pill in the top header on your tablet to switch between laptops instantly!
           files: release-artifacts/PCRemote.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

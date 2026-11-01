@@ -1,27 +1,35 @@
 /**
- * Main Application Controller (v1.0.2)
- * Features: Multi-Monitor Switcher, Real-Time Keystroke Typing,
- * Laptop Backlight Brightness, Click & Hold (Drag Lock), and Reverse Scrolling.
+ * Main Application Controller (v1.0.3)
+ * Features: Multi-Laptop Switcher & Profile Manager, Multi-Monitor Switcher,
+ * Real-Time Keystroke Typing, Laptop Brightness, Click & Hold (Drag Lock), and Reverse Scrolling.
  */
 
 class WebSocketClient {
   constructor() {
     this.ws = null;
+    this.currentHost = window.location.host;
     this.handlers = new Map();
     this.binaryHandler = null;
     this.reconnectTimer = null;
-    this.connect();
+    this.connect(this.currentHost);
   }
 
-  connect() {
+  connect(targetHost) {
+    if (this.ws) {
+      try {
+        this.ws.close();
+      } catch (e) {}
+    }
+
+    this.currentHost = targetHost || window.location.host;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const wsUrl = `${protocol}//${this.currentHost}/ws`;
 
     this.ws = new WebSocket(wsUrl);
     this.ws.binaryType = 'arraybuffer';
 
     this.ws.onopen = () => {
-      console.log('Connected to laptop server.');
+      console.log(`Connected to host: ${this.currentHost}`);
       this.updateStatus(true);
       if (this.reconnectTimer) {
         clearInterval(this.reconnectTimer);
@@ -59,8 +67,8 @@ class WebSocketClient {
   scheduleReconnect() {
     if (!this.reconnectTimer) {
       this.reconnectTimer = setInterval(() => {
-        if (!this.isOpen()) this.connect();
-      }, 2000);
+        if (!this.isOpen()) this.connect(this.currentHost);
+      }, 2500);
     }
   }
 
@@ -117,6 +125,155 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- Multi-Laptop Switcher & Profile Storage ---
+  const currentPcName = document.getElementById('currentPcName');
+  const pcSwitcherModal = document.getElementById('pcSwitcherModal');
+  const btnPcSwitcher = document.getElementById('btnPcSwitcher');
+  const btnClosePcModal = document.getElementById('btnClosePcModal');
+  const savedLaptopsList = document.getElementById('savedLaptopsList');
+  const btnAddPc = document.getElementById('btnAddPc');
+  const inputNewPcName = document.getElementById('inputNewPcName');
+  const inputNewPcIp = document.getElementById('inputNewPcIp');
+
+  function getSavedLaptops() {
+    try {
+      const data = localStorage.getItem('pcremote_saved_laptops');
+      if (data) return JSON.parse(data);
+    } catch (e) {}
+
+    // Default to current host
+    const currentHost = window.location.host;
+    return [{
+      name: 'Personal Laptop',
+      host: currentHost
+    }];
+  }
+
+  function saveLaptopsList(list) {
+    localStorage.setItem('pcremote_saved_laptops', JSON.stringify(list));
+  }
+
+  function renderLaptopsList() {
+    if (!savedLaptopsList) return;
+    const laptops = getSavedLaptops();
+    const activeHost = ws.currentHost;
+
+    savedLaptopsList.innerHTML = '';
+    laptops.forEach((pc) => {
+      const item = document.createElement('div');
+      const isActive = (pc.host === activeHost);
+      item.className = `laptop-item ${isActive ? 'active' : ''}`;
+
+      item.innerHTML = `
+        <div class="laptop-item-info">
+          <div class="laptop-item-name">
+            <span>💻</span>
+            <span>${pc.name}</span>
+            ${isActive ? '<span style="font-size:0.68rem; color:#10b981;">(Connected)</span>' : ''}
+          </div>
+          <div class="laptop-item-ip">${pc.host}</div>
+        </div>
+        <div class="laptop-item-actions">
+          ${laptops.length > 1 ? `<button class="btn-delete-pc" title="Remove" data-host="${pc.host}">🗑️</button>` : ''}
+        </div>
+      `;
+
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-delete-pc')) return;
+        switchLaptop(pc.host, pc.name);
+      });
+
+      const delBtn = item.querySelector('.btn-delete-pc');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteLaptop(pc.host);
+        });
+      }
+
+      savedLaptopsList.appendChild(item);
+    });
+  }
+
+  function switchLaptop(targetHost, name) {
+    if (ws.currentHost === targetHost) {
+      if (pcSwitcherModal) pcSwitcherModal.classList.remove('active');
+      return;
+    }
+
+    showToast(`Switching to ${name}...`);
+    streamer.stop();
+
+    // If running inside Android APK native webview
+    if (window.AndroidHost && typeof window.AndroidHost.switchLaptop === 'function') {
+      window.AndroidHost.switchLaptop(targetHost);
+      return;
+    }
+
+    // Hot-reconnect websocket directly
+    ws.connect(targetHost);
+    if (currentPcName) currentPcName.textContent = name;
+    if (pcSwitcherModal) pcSwitcherModal.classList.remove('active');
+
+    setTimeout(() => {
+      if (currentTab === 'mirror') streamer.start(30, 65, 0.75);
+      renderLaptopsList();
+    }, 500);
+  }
+
+  function deleteLaptop(hostToDelete) {
+    let laptops = getSavedLaptops().filter((p) => p.host !== hostToDelete);
+    if (laptops.length === 0) {
+      laptops = [{ name: 'Default PC', host: window.location.host }];
+    }
+    saveLaptopsList(laptops);
+    renderLaptopsList();
+    showToast('Laptop profile removed');
+  }
+
+  if (btnPcSwitcher) {
+    btnPcSwitcher.addEventListener('click', () => {
+      renderLaptopsList();
+      if (pcSwitcherModal) pcSwitcherModal.classList.add('active');
+    });
+  }
+
+  if (btnClosePcModal) {
+    btnClosePcModal.addEventListener('click', () => {
+      if (pcSwitcherModal) pcSwitcherModal.classList.remove('active');
+    });
+  }
+
+  if (btnAddPc) {
+    btnAddPc.addEventListener('click', () => {
+      const name = (inputNewPcName.value || 'Laptop 2').trim();
+      let ip = (inputNewPcIp.value || '').trim();
+
+      if (!ip) {
+        showToast('Please enter an IP address');
+        return;
+      }
+
+      if (!ip.includes(':')) {
+        ip = `${ip}:5000`;
+      }
+
+      const laptops = getSavedLaptops();
+      // Check if already exists
+      const existing = laptops.find((p) => p.host === ip);
+      if (existing) {
+        existing.name = name;
+      } else {
+        laptops.push({ name: name, host: ip });
+      }
+
+      saveLaptopsList(laptops);
+      inputNewPcName.value = '';
+      inputNewPcIp.value = '';
+      switchLaptop(ip, name);
+    });
+  }
+
   // --- Multi-Monitor Setup ---
   const monitorSelect = document.getElementById('monitorSelect');
   
@@ -148,6 +305,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- WebSocket Initialization Handler ---
   ws.on('init', (data) => {
+    if (data.name) {
+      if (currentPcName) currentPcName.textContent = data.name;
+      // Auto-update friendly name in saved list if default
+      const laptops = getSavedLaptops();
+      const current = laptops.find((p) => p.host === ws.currentHost);
+      if (current && (current.name === 'Personal Laptop' || current.name === 'My PC' || current.name === 'Default PC')) {
+        current.name = data.name;
+        saveLaptopsList(laptops);
+      }
+    }
     if (data.monitors) {
       populateMonitors(data.monitors, data.active_monitor);
     }
@@ -188,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeTypingPill) activeTypingPill.classList.remove('visible');
   }
 
-  // Trigger buttons across header, mirror, and touchpad
   const btnHeaderKb = document.getElementById('btnHeaderKb');
   const btnFloatingKb = document.getElementById('btnFloatingKb');
   const btnTouchpadKb = document.getElementById('btnTouchpadKb');
@@ -214,7 +380,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     realtimeKbInput.addEventListener('input', (e) => {
-      // Handles individual characters or speech-to-text text chunks
       const val = realtimeKbInput.value;
       if (val) {
         for (let char of val) {
@@ -387,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- Sentence Text Input & Clipboard Sync ---
+  // --- Full Text Input & Clipboard Sync ---
   const textInputForm = document.getElementById('textInputForm');
   const textInputField = document.getElementById('textInputField');
   if (textInputForm && textInputField) {
@@ -411,7 +576,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       try {
-        const res = await fetch('/api/clipboard', {
+        const protocol = window.location.protocol;
+        const res = await fetch(`${protocol}//${ws.currentHost}/api/clipboard`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: text })
@@ -492,7 +658,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (updateStatusText) updateStatusText.textContent = 'Checking...';
 
       try {
-        const res = await fetch('/api/check-update');
+        const protocol = window.location.protocol;
+        const res = await fetch(`${protocol}//${ws.currentHost}/api/check-update`);
         const data = await res.json();
 
         if (data.has_update) {

@@ -23,7 +23,13 @@
   <header class="app-header">
     <div class="brand">
       <div id="statusDot" class="status-dot"></div>
-      <span class="brand-title">PC Remote</span>
+      
+      <!-- Multi-PC Switcher Pill -->
+      <button id="btnPcSwitcher" class="btn-pc-switcher" title="Switch or Add Laptop">
+        <span>💻</span>
+        <span id="currentPcName">My PC</span>
+        <span style="font-size: 0.65rem; opacity: 0.7;">▼</span>
+      </button>
     </div>
 
     <!-- Multi-Monitor Switcher Dropdown -->
@@ -323,6 +329,34 @@
         <img id="screenshotPreviewImg" src="" alt="Screenshot Preview">
         <div class="modal-actions">
           <button id="btnDownloadScreenshot" class="btn-modal">⬇️ Save Image</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Laptop Switcher Modal -->
+  <div id="pcSwitcherModal" class="modal-overlay">
+    <div class="modal-card" style="width: 380px; max-width: 92vw;">
+      <div class="modal-header">
+        <h3>💻 Connected Laptops</h3>
+        <button id="btnClosePcModal" class="btn-icon" style="border:none; background:transparent;">✕</button>
+      </div>
+      <div class="modal-body" style="align-items: stretch;">
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px;">
+          Select a laptop to switch control instantly:
+        </div>
+        
+        <!-- Saved Laptops List -->
+        <div id="savedLaptopsList" class="laptops-list"></div>
+
+        <!-- Add New Laptop Form -->
+        <div class="card" style="margin-top: 10px; padding: 12px; background: var(--bg-tertiary);">
+          <div class="card-title" style="margin-bottom: 8px;">➕ Add Another Laptop</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <input type="text" id="inputNewPcName" class="input-field" placeholder="Nickname (e.g. Work Laptop)">
+            <input type="text" id="inputNewPcIp" class="input-field" placeholder="IP Address (e.g. 192.168.1.45)">
+            <button id="btnAddPc" class="btn-send" style="padding: 10px; width: 100%;">Save & Connect</button>
+          </div>
         </div>
       </div>
     </div>

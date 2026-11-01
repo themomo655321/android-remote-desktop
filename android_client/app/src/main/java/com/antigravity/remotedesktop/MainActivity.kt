@@ -314,5 +314,17 @@ class MainActivity : AppCompatActivity() {
         fun checkForUpdates() {
             activity.checkForAppUpdates(silentIfLatest = false)
         }
+
+        @JavascriptInterface
+        fun switchLaptop(targetHost: String) {
+            activity.mainHandler.post {
+                val ip = targetHost.split(":")[0]
+                activity.getSharedPreferences(activity.PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putString(activity.KEY_LAST_IP, ip)
+                    .apply()
+                activity.loadRemoteUrl("http://$targetHost")
+            }
+        }
     }
 }

@@ -20,6 +20,7 @@ from starlette.routing import Route, WebSocketRoute, Mount
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 import uvicorn
+import socket
 
 from host.screen_capture import ScreenCapturer
 from host.input_controller import InputController
@@ -28,15 +29,16 @@ from host.system_info import SystemManager
 screen_capturer = ScreenCapturer()
 input_controller = InputController()
 local_ip = SystemManager.get_local_ip()
+HOSTNAME = socket.gethostname()
 PORT = 5000
-CURRENT_VERSION = "1.0.2"
+CURRENT_VERSION = "1.0.3"
 
 STATIC_DIR = BASE_DIR / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 
 
 async def api_status(request):
-    """Returns system status, active monitors, battery, and brightness."""
+    """Returns system status, active monitors, battery, brightness, and computer name."""
     monitors = screen_capturer.get_monitors()
     active_rect = screen_capturer.get_active_monitor_rect()
     battery = SystemManager.get_battery_info()
@@ -45,6 +47,7 @@ async def api_status(request):
     return JSONResponse({
         "status": "online",
         "version": CURRENT_VERSION,
+        "name": HOSTNAME,
         "ip": local_ip,
         "port": PORT,
         "monitors": monitors,
@@ -141,6 +144,7 @@ async def ws_endpoint(websocket: WebSocket):
     # Send initial configuration
     await websocket.send_text(json.dumps({
         "type": "init",
+        "name": HOSTNAME,
         "monitors": monitors,
         "active_monitor": screen_capturer.active_monitor_index,
         "screen": {"width": active_rect["width"], "height": active_rect["height"]},

@@ -91,7 +91,23 @@ If you prefer building a standalone `.apk`:
 
 ---
 
-## 🛠️ Architecture
+## 💻 Multi-Laptop Support (Controlling 2 Laptops)
+
+You can save and control multiple laptops from your tablet with 1-tap switching!
+
+### Setting Up Laptop #2:
+On your second laptop, do either:
+* **Option A (Automatic 1-Click Setup)**:
+  Download and run [**`setup_laptop_2.bat`**](https://raw.githubusercontent.com/themomo655321/android-remote-desktop/main/setup_laptop_2.bat). It downloads all files from GitHub, installs Python dependencies, and puts a "Start PC Remote" shortcut on your desktop!
+* **Option B (Manual ZIP Download)**:
+  Download the [Repository ZIP](https://github.com/themomo655321/android-remote-desktop/archive/refs/heads/main.zip), extract it, and double-click [**`start_server.bat`**](https://raw.githubusercontent.com/themomo655321/android-remote-desktop/main/start_server.bat).
+
+### Switching Laptops on Your Tablet:
+1. Tap the **`[ 💻 Laptop Name ▼ ]`** pill in the top header.
+2. Select your other laptop from the list, or tap **"➕ Add Another Laptop"** to add Laptop #2's IP address.
+3. The app switches control in under 2 seconds!
+
+---
 
 * **Host**: Python 3 + Windows native GDI / GDI+ hardware image encoding (10ms frame capture), Win32 `SendInput`, `Starlette` ASGI & `Uvicorn` WebSockets. Zero external pip dependencies required.
 * **Client**: HTML5 Pointer Events (supports Touch, Mouse, and Advan Sketsa Stylus Pen), Hardware Canvas ImageBitmap decoder, Web Audio feedback, and PWA Service Shell.

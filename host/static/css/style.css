@@ -81,6 +81,104 @@ body {
   color: #fff;
 }
 
+/* PC Switcher Button */
+.btn-pc-switcher {
+  background: var(--bg-tertiary);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  max-width: 140px;
+}
+
+.btn-pc-switcher span#currentPcName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-pc-switcher:active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Saved Laptops List */
+.laptops-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.laptop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.laptop-item:active {
+  transform: scale(0.98);
+}
+
+.laptop-item.active {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.14);
+}
+
+.laptop-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.laptop-item-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.laptop-item-ip {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.laptop-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-delete-pc {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+.btn-delete-pc:hover {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
 /* Monitor Selector Dropdown */
 .monitor-select-wrapper {
   display: flex;
