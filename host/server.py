@@ -251,11 +251,25 @@ async def ws_endpoint(websocket: WebSocket):
             stream_task.cancel()
 
 
+async def api_download_apk(request):
+    """Direct LAN download of the compiled Android APK."""
+    apk_path = BASE_DIR.parent / "PCRemote.apk"
+    if apk_path.exists():
+        return FileResponse(
+            path=str(apk_path),
+            media_type="application/vnd.android.package-archive",
+            filename="PCRemote.apk"
+        )
+    return JSONResponse({"error": "APK not found"}, status_code=404)
+
+
 # Define application routes
 routes = [
     Route("/api/status", api_status, methods=["GET"]),
     Route("/api/screenshot", api_screenshot, methods=["GET"]),
     Route("/api/clipboard", api_clipboard, methods=["GET", "POST"]),
+    Route("/download", api_download_apk, methods=["GET"]),
+    Route("/PCRemote.apk", api_download_apk, methods=["GET"]),
     WebSocketRoute("/ws", ws_endpoint),
     Mount("/", app=StaticFiles(directory=str(STATIC_DIR), html=True), name="static"),
 ]
