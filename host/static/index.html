@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1e26">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>PC Remote & Mirror</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Top Header Bar -->
+  <header class="app-header">
+    <div class="brand">
+      <div id="statusDot" class="status-dot"></div>
+      <span class="brand-title">PC Remote</span>
+    </div>
+
+    <div class="header-badges">
+      <span id="resBadge" class="badge">-- x --</span>
+      <span id="batteryBadge" class="badge">🔋 --%</span>
+    </div>
+
+    <div class="header-actions">
+      <!-- High-visibility Screenshot Button -->
+      <button id="btnHeaderScreenshot" class="btn-header-screenshot" title="Take Instant Screenshot">
+        <span>📸</span> Screenshot
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Viewport -->
+  <main class="viewport-container">
+
+    <!-- 1. Screen Mirror Panel (View, Touch, and Stylus support) -->
+    <section id="panel-mirror" class="view-panel active">
+      <div class="screen-view">
+        <canvas id="screenCanvas"></canvas>
+        
+        <!-- Floating controls on top of mirror -->
+        <div class="mirror-floating-controls">
+          <button id="btnResetZoom" class="floating-btn" title="Reset Zoom">🔍 1x</button>
+          <button id="btnToggleFullscreen" class="floating-btn" title="Fullscreen">⛶</button>
+          <button id="btnFloatingScreenshot" class="floating-btn" title="Screenshot">📸</button>
+        </div>
+
+        <div class="mirror-hint">Direct Touch & Stylus Active • Pinch to Zoom</div>
+      </div>
+    </section>
+
+    <!-- 2. Smart Touchpad Panel (Phone Optimized) -->
+    <section id="panel-touchpad" class="view-panel">
+      <div class="touchpad-container">
+        <div class="touchpad-main">
+          <div id="touchpadSurface" class="touchpad-surface">
+            <div class="touchpad-guide">
+              <p><strong>Touchpad Surface</strong></p>
+              <p>1-Finger Drag : Move Cursor</p>
+              <p>1-Finger Tap : Left Click</p>
+              <p>2-Finger Tap : Right Click</p>
+              <p>2-Finger Drag : Scroll</p>
+            </div>
+          </div>
+          <!-- Side Scroll Strip for quick thumb scrolling -->
+          <div id="scrollStrip" class="scroll-strip">
+            <span>▲</span>
+            <span>SCROLL</span>
+            <span>▼</span>
+          </div>
+        </div>
+
+        <!-- Mouse Buttons -->
+        <div class="touchpad-buttons">
+          <button id="btnMouseLeft" class="mouse-btn">Left Click</button>
+          <button id="btnMouseMiddle" class="mouse-btn" style="flex: 0.6;">Wheel</button>
+          <button id="btnMouseRight" class="mouse-btn">Right Click</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Media & System Controls Panel -->
+    <section id="panel-media" class="view-panel">
+      <div class="media-container">
+        
+        <!-- Master Volume Card -->
+        <div class="card">
+          <div class="card-title">🔊 Master Volume</div>
+          <div class="volume-row">
+            <button class="btn-ctrl" data-shortcut="volume_mute" title="Mute">🔇</button>
+            <button class="btn-ctrl" data-shortcut="volume_down" title="Volume Down">🔉</button>
+            <button class="btn-ctrl" data-shortcut="volume_up" title="Volume Up">🔊</button>
+          </div>
+        </div>
+
+        <!-- Media Playback Card -->
+        <div class="card">
+          <div class="card-title">🎵 Media Controls</div>
+          <div class="media-btn-row">
+            <button class="btn-ctrl" data-shortcut="prev_track" title="Previous Track" style="border-radius: 50%;">⏮</button>
+            <button class="btn-play-large" data-shortcut="play_pause" title="Play / Pause">⏯</button>
+            <button class="btn-ctrl" data-shortcut="next_track" title="Next Track" style="border-radius: 50%;">⏭</button>
+          </div>
+        </div>
+
+        <!-- Window & Desktop Management -->
+        <div class="card">
+          <div class="card-title">🪟 Windows Navigation</div>
+          <div class="grid-3">
+            <button class="action-tile" data-shortcut="show_desktop">
+              <span class="icon">🖥️</span>
+              <span>Show Desktop</span>
+            </button>
+            <button class="action-tile" data-shortcut="alt_tab">
+              <span class="icon">🔄</span>
+              <span>Alt + Tab</span>
+            </button>
+            <button class="action-tile" data-shortcut="task_view">
+              <span class="icon">📑</span>
+              <span>Task View</span>
+            </button>
+            <button class="action-tile" data-shortcut="desktop_left">
+              <span class="icon">◀️</span>
+              <span>Desktop Left</span>
+            </button>
+            <button class="action-tile" data-shortcut="desktop_right">
+              <span class="icon">▶️</span>
+              <span>Desktop Right</span>
+            </button>
+            <button class="action-tile" data-shortcut="task_manager">
+              <span class="icon">⚡</span>
+              <span>Task Mgr</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Power & Security Card -->
+        <div class="card">
+          <div class="card-title">🔒 System Power</div>
+          <div class="grid-2">
+            <button class="action-tile" data-shortcut="lock_pc">
+              <span class="icon">🔒</span>
+              <span>Lock PC</span>
+            </button>
+            <button class="action-tile danger" data-shortcut="show_desktop">
+              <span class="icon">💤</span>
+              <span>Minimize All</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4. Shortcuts & Screenshot Hub Panel -->
+    <section id="panel-shortcuts" class="view-panel">
+      <div class="shortcuts-container">
+        
+        <!-- Screenshot Hub Card -->
+        <div class="card" style="border-color: rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.05);">
+          <div class="card-title" style="color: #60a5fa;">📸 Screenshot Hub</div>
+          <div class="grid-3">
+            <button id="btnHeaderScreenshotCard" class="action-tile" style="background: var(--accent); color: white;" onclick="document.getElementById('btnHeaderScreenshot').click()">
+              <span class="icon">📷</span>
+              <span>Capture & Save</span>
+            </button>
+            <button id="btnSnip" class="action-tile">
+              <span class="icon">✂️</span>
+              <span>Snipping Tool</span>
+            </button>
+            <button id="btnPrtScn" class="action-tile">
+              <span class="icon">📋</span>
+              <span>PrintScreen</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Text Input & Clipboard Sync -->
+        <div class="card">
+          <div class="card-title">⌨️ Type Text or Paste to Laptop</div>
+          <form id="textInputForm" class="text-input-box">
+            <input type="text" id="textInputField" class="input-field" placeholder="Type words, links, emojis..." autocomplete="off">
+            <button type="submit" class="btn-send">Send</button>
+          </form>
+          <div style="margin-top: 10px;">
+            <button id="btnPushClipboard" class="action-tile" style="width: 100%; flex-direction: row; justify-content: center; padding: 10px;">
+              <span>📋 Copy Typed Text to Laptop Clipboard</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- D-Pad Directional Controls -->
+        <div class="card">
+          <div class="card-title">🕹️ Navigation Keys</div>
+          <div class="d-pad-container">
+            <button class="btn-key" data-shortcut="up">▲ UP</button>
+            <div class="d-pad-middle">
+              <button class="btn-key" data-shortcut="left">◀ LEFT</button>
+              <button class="btn-key" data-shortcut="enter" style="background: var(--accent); color: white;">ENTER</button>
+              <button class="btn-key" data-shortcut="right">RIGHT ▶</button>
+            </div>
+            <button class="btn-key" data-shortcut="down">▼ DOWN</button>
+          </div>
+        </div>
+
+        <!-- Special Function Keys Grid -->
+        <div class="card">
+          <div class="card-title">🎛️ Special Keys</div>
+          <div class="grid-3">
+            <button class="btn-key" data-shortcut="esc">ESC</button>
+            <button class="btn-key" data-shortcut="tab">TAB</button>
+            <button class="btn-key" data-shortcut="backspace">⌫ BACK</button>
+            <button class="btn-key" data-shortcut="win">⊞ WIN</button>
+            <button class="btn-key" data-shortcut="copy">Ctrl + C</button>
+            <button class="btn-key" data-shortcut="paste">Ctrl + V</button>
+            <button class="btn-key" data-shortcut="select_all">Ctrl + A</button>
+            <button class="btn-key" data-shortcut="undo">Ctrl + Z</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-target="mirror">
+      <span class="nav-icon">🖥️</span>
+      <span class="nav-label">Mirror</span>
+    </button>
+    <button class="nav-item" data-target="touchpad">
+      <span class="nav-icon">🖱️</span>
+      <span class="nav-label">Touchpad</span>
+    </button>
+    <button class="nav-item" data-target="media">
+      <span class="nav-icon">🎵</span>
+      <span class="nav-label">Media</span>
+    </button>
+    <button class="nav-item" data-target="shortcuts">
+      <span class="nav-icon">⌨️</span>
+      <span class="nav-label">Shortcuts</span>
+    </button>
+  </nav>
+
+  <!-- Screenshot Preview Modal -->
+  <div id="screenshotModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📸 Screenshot Captured</h3>
+        <button id="btnCloseModal" class="btn-icon" style="border:none; background:transparent;">✕</button>
+      </div>
+      <div class="modal-body">
+        <img id="screenshotPreviewImg" src="" alt="Screenshot Preview">
+        <div class="modal-actions">
+          <button id="btnDownloadScreenshot" class="btn-modal primary">⬇️ Save Image</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/js/stream.js"></script>
+  <script src="/js/touchpad.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e2430" />
+      <stop offset="100%" stop-color="#0f1217" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Rect -->
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <!-- Laptop Body -->
+  <rect x="100" y="140" width="312" height="200" rx="20" fill="none" stroke="url(#accent)" stroke-width="24"/>
+  <!-- Laptop Screen inner -->
+  <rect x="124" y="164" width="264" height="152" rx="10" fill="#252a36"/>
+  <!-- Remote signal waves -->
+  <path d="M220 230 A48 48 0 0 1 292 230" fill="none" stroke="#60a5fa" stroke-width="16" stroke-linecap="round"/>
+  <path d="M195 205 A85 85 0 0 1 317 205" fill="none" stroke="#3b82f6" stroke-width="16" stroke-linecap="round"/>
+  <!-- Laptop Base -->
+  <path d="M70 340 L442 340 Q452 380 432 380 L80 380 Q60 380 70 340 Z" fill="url(#accent)"/>
+</svg>

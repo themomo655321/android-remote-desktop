@@ -1,0 +1,18 @@
+{
+  "name": "PC Remote & Mirror",
+  "short_name": "PC Remote",
+  "description": "Remote control and screen mirror for your Windows laptop",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121418",
+  "theme_color": "#1a1d24",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
