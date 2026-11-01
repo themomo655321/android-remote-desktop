@@ -46,11 +46,16 @@ jobs:
       - name: Publish Release to GitHub
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: "PC Remote v1.0.0 (Direct APK Download)"
+          tag_name: v1.0.1
+          name: "PC Remote v1.0.1 (Direct APK Download)"
           body: |
-            ## 📱 PC Remote & Screen Mirror for Android
+            ## 📱 PC Remote & Screen Mirror for Android (v1.0.1)
             Download and install this APK directly on your **Advan Sketsa 2** or Android phone!
+
+            ### ✨ What's New in v1.0.1:
+            * **In-App Auto Update System**: Automatically checks for updates and allows 1-tap in-app downloads and updates!
+            * **Screenshot Hub**: Instant capture, snipping tool trigger, and download.
+            * **Advan Sketsa 2 Stylus Optimization**: Direct pointer and pressure sensitivity support.
 
             ### 🚀 Quick Start
             1. Download `PCRemote.apk` below on your tablet or phone.

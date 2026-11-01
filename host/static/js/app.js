@@ -320,6 +320,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Keep phone screen awake
   requestWakeLock();
+
+  // --- Auto-Update Check Handler ---
+  const btnCheckUpdate = document.getElementById('btnCheckUpdate');
+  const updateStatusText = document.getElementById('updateStatusText');
+
+  if (btnCheckUpdate) {
+    btnCheckUpdate.addEventListener('click', async () => {
+      // If running inside Android APK webview with native bridge
+      if (window.AndroidHost && typeof window.AndroidHost.checkForUpdates === 'function') {
+        window.AndroidHost.checkForUpdates();
+        return;
+      }
+
+      // If running in browser or PWA
+      showToast('Checking for updates...');
+      if (updateStatusText) updateStatusText.textContent = 'Checking...';
+
+      try {
+        const res = await fetch('/api/check-update');
+        const data = await res.json();
+
+        if (data.has_update) {
+          if (updateStatusText) updateStatusText.textContent = `New: v${data.latest_version}`;
+          if (confirm(`A new update (v${data.latest_version}) is available!\n\nWould you like to download the updated APK?`)) {
+            window.location.href = data.download_url || '/PCRemote.apk';
+          }
+        } else {
+          if (updateStatusText) updateStatusText.textContent = 'Up to date';
+          showToast(`PC Remote is up to date (v${data.current_version})!`);
+        }
+      } catch (err) {
+        showToast('Could not check updates');
+        if (updateStatusText) updateStatusText.textContent = 'Offline';
+      }
+    });
+  }
 });
 
 // UI Helpers

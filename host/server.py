@@ -251,6 +251,41 @@ async def ws_endpoint(websocket: WebSocket):
             stream_task.cancel()
 
 
+CURRENT_VERSION = "1.0.1"
+
+
+async def api_check_update(request):
+    """Checks GitHub for the latest release version."""
+    import urllib.request
+    try:
+        url = "https://api.github.com/repos/themomo655321/android-remote-desktop/releases/latest"
+        req = urllib.request.Request(url, headers={"User-Agent": "PCRemote-Host"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+            latest_tag = data.get("tag_name", "").replace("v", "").strip()
+            
+            apk_url = f"https://github.com/themomo655321/android-remote-desktop/releases/download/{data.get('tag_name')}/PCRemote.apk"
+            for asset in data.get("assets", []):
+                if asset.get("name", "").endswith(".apk"):
+                    apk_url = asset.get("browser_download_url")
+                    break
+
+            has_update = latest_tag != CURRENT_VERSION and bool(latest_tag)
+            return JSONResponse({
+                "current_version": CURRENT_VERSION,
+                "latest_version": latest_tag,
+                "has_update": has_update,
+                "download_url": apk_url,
+                "notes": data.get("body", "")
+            })
+    except Exception as e:
+        return JSONResponse({
+            "current_version": CURRENT_VERSION,
+            "error": str(e),
+            "has_update": False
+        })
+
+
 async def api_download_apk(request):
     """Direct LAN download of the compiled Android APK."""
     apk_path = BASE_DIR.parent / "PCRemote.apk"
@@ -268,6 +303,7 @@ routes = [
     Route("/api/status", api_status, methods=["GET"]),
     Route("/api/screenshot", api_screenshot, methods=["GET"]),
     Route("/api/clipboard", api_clipboard, methods=["GET", "POST"]),
+    Route("/api/check-update", api_check_update, methods=["GET"]),
     Route("/download", api_download_apk, methods=["GET"]),
     Route("/PCRemote.apk", api_download_apk, methods=["GET"]),
     WebSocketRoute("/ws", ws_endpoint),
