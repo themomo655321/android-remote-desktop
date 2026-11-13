@@ -288,7 +288,7 @@ body {
   display: flex;
 }
 
-/* Screen Mirror */
+/* Screen Mirror & Drawing Pad */
 .screen-view {
   width: 100%;
   height: 100%;
@@ -307,6 +307,217 @@ body {
   object-fit: contain;
   cursor: crosshair;
   touch-action: none;
+  transform-origin: center center;
+  transition: transform 0.05s ease-out;
+}
+
+.drawing-overlay-canvas {
+  position: absolute;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 5;
+  transform-origin: center center;
+  transition: transform 0.05s ease-out;
+}
+
+/* Top Drawing Status Bar */
+.drawing-top-bar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 25;
+  background: rgba(20, 24, 33, 0.85);
+  backdrop-filter: blur(10px);
+  padding: 6px 12px;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  max-width: 95vw;
+}
+
+.pressure-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pressure-meter-track {
+  width: 55px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pressure-meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  border-radius: 3px;
+  transition: width 0.04s linear;
+}
+
+.pressure-text {
+  font-size: 0.72rem;
+  font-family: monospace;
+  font-weight: 700;
+  color: #60a5fa;
+  min-width: 30px;
+}
+
+.drawing-pill-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.drawing-pill-btn:active {
+  transform: scale(0.95);
+}
+
+.drawing-pill-btn.active {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #34d399;
+}
+
+/* Floating Artist Toolbar */
+.artist-toolbar {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(20, 24, 33, 0.88);
+  backdrop-filter: blur(12px);
+  padding: 8px 6px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 30;
+  transition: left 0.25s ease, right 0.25s ease, transform 0.2s ease, opacity 0.2s;
+  user-select: none;
+}
+
+.artist-toolbar.dock-left {
+  left: 12px;
+  right: auto;
+}
+
+.artist-toolbar.dock-right {
+  right: 12px;
+  left: auto;
+}
+
+.artist-toolbar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 6px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+}
+
+.artist-header-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artist-header-btn:hover, .artist-header-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.artist-tools-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.artist-tool-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  color: #f1f5f9;
+  padding: 6px 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+  min-width: 68px;
+}
+
+.artist-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.artist-tool-btn:active, .artist-tool-btn.active {
+  background: var(--accent);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 10px var(--accent-glow);
+  transform: scale(0.96);
+}
+
+.tool-icon {
+  font-size: 1.05rem;
+  display: inline-block;
+  line-height: 1;
+}
+
+.tool-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.3px;
+}
+
+.tool-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 3px 2px;
+}
+
+/* Collapsed Toolbar State */
+.artist-toolbar.collapsed .artist-tools-group {
+  display: none;
+}
+
+.artist-toolbar.collapsed .artist-toolbar-header {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.artist-toolbar.collapsed .artist-header-btn#btnSwitchDock {
+  display: none;
 }
 
 .mirror-floating-controls {

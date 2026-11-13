@@ -31,7 +31,7 @@ input_controller = InputController()
 local_ip = SystemManager.get_local_ip()
 HOSTNAME = socket.gethostname()
 PORT = 5000
-CURRENT_VERSION = "1.0.4"
+CURRENT_VERSION = "1.1.0"
 
 STATIC_DIR = BASE_DIR / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -223,6 +223,23 @@ async def ws_endpoint(websocket: WebSocket):
                 streaming = False
                 if stream_task and not stream_task.done():
                     stream_task.cancel()
+
+            # Drawing Pad / Stylus Pen Stroke
+            elif msg_type == "pen_stroke":
+                action = data.get("action", "move")
+                x = data.get("x", 0)
+                y = data.get("y", 0)
+                pressure = data.get("pressure", 0.5)
+                buttons = data.get("buttons", 1)
+                rect = screen_capturer.get_active_monitor_rect()
+                input_controller.handle_pen_stroke(
+                    action=action,
+                    x=x,
+                    y=y,
+                    pressure=pressure,
+                    monitor_rect=rect,
+                    buttons=buttons
+                )
 
             # Touchpad / Mouse Movement
             elif msg_type == "mouse_move_rel":

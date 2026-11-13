@@ -65,21 +65,92 @@
   <!-- Main Content Viewport -->
   <main class="viewport-container">
 
-    <!-- 1. Screen Mirror Panel (View, Touch, and Stylus support) -->
+    <!-- 1. Drawing Pad / Screen Mirror Panel (Affinity Optimized) -->
     <section id="panel-mirror" class="view-panel active">
       <div class="screen-view">
         <canvas id="screenCanvas"></canvas>
+        <canvas id="drawingOverlayCanvas" class="drawing-overlay-canvas"></canvas>
         
-        <!-- Floating controls on top of mirror -->
-        <div class="mirror-floating-controls">
-          <button id="btnFloatingDrag" class="floating-btn" title="Toggle Drag Lock (Click & Hold)">✋ Drag</button>
-          <button id="btnFloatingKb" class="floating-btn" title="Open Native Keyboard">⌨️</button>
-          <button id="btnResetZoom" class="floating-btn" title="Reset Zoom">🔍 1x</button>
-          <button id="btnToggleFullscreen" class="floating-btn" title="Fullscreen">⛶</button>
-          <button id="btnFloatingScreenshot" class="floating-btn" title="Screenshot">📸</button>
+        <!-- Top Status Bar for Drawing -->
+        <div class="drawing-top-bar">
+          <div class="pressure-badge" title="Live Stylus Pressure">
+            <span style="font-size: 0.8rem;">⚡</span>
+            <div class="pressure-meter-track">
+              <div id="pressureMeterFill" class="pressure-meter-fill" style="width: 0%;"></div>
+            </div>
+            <span id="pressureValueText" class="pressure-text">0%</span>
+          </div>
+
+          <button id="btnTogglePalm" class="drawing-pill-btn active" title="Toggle Palm Rejection (Only Stylus Draws)">
+            <span>🖐️</span> Palm Reject: <strong id="palmStatusText">STRICT</strong>
+          </button>
+
+          <button id="btnResetZoom" class="drawing-pill-btn" title="Reset Canvas Pan & Zoom">
+            <span>🔍</span> 1x
+          </button>
+
+          <button id="btnToggleFullscreen" class="drawing-pill-btn" title="Toggle Fullscreen">
+            <span>⛶</span> Fullscreen
+          </button>
         </div>
 
-        <div class="mirror-hint">Direct Touch & Stylus • Multi-Monitor Ready</div>
+        <!-- Floating Artist Toolbar (Dockable Left or Right, Minimizable) -->
+        <div id="artistToolbar" class="artist-toolbar dock-left">
+          <div class="artist-toolbar-header">
+            <button id="btnCollapseToolbar" class="artist-header-btn" title="Minimize / Expand Palette">🎨</button>
+            <button id="btnSwitchDock" class="artist-header-btn" title="Switch Side (Left / Right)">⇄</button>
+          </div>
+
+          <div class="artist-tools-group">
+            <button class="artist-tool-btn" data-shortcut="undo" title="Undo (Ctrl+Z)">
+              <span class="tool-icon">↩️</span>
+              <span class="tool-label">Undo</span>
+            </button>
+            <button class="artist-tool-btn" data-shortcut="redo" title="Redo (Ctrl+Y)">
+              <span class="tool-icon">↪️</span>
+              <span class="tool-label">Redo</span>
+            </button>
+            <div class="tool-separator"></div>
+            <button class="artist-tool-btn active" data-shortcut="affinity_brush" title="Paint Brush (B)">
+              <span class="tool-icon">🖌️</span>
+              <span class="tool-label">Brush</span>
+            </button>
+            <button class="artist-tool-btn" data-shortcut="affinity_eraser" title="Eraser (E)">
+              <span class="tool-icon">🧹</span>
+              <span class="tool-label">Eraser</span>
+            </button>
+            <button class="artist-tool-btn" data-shortcut="affinity_pen" title="Pen Tool (P)">
+              <span class="tool-icon">✒️</span>
+              <span class="tool-label">Pen</span>
+            </button>
+            <button class="artist-tool-btn" data-shortcut="affinity_node" title="Node / Select (A/V)">
+              <span class="tool-icon">↖️</span>
+              <span class="tool-label">Select</span>
+            </button>
+            <button class="artist-tool-btn" data-shortcut="affinity_hand" title="Hand / Pan View (H/Space)">
+              <span class="tool-icon">🖐️</span>
+              <span class="tool-label">Pan</span>
+            </button>
+            <div class="tool-separator"></div>
+            <button class="artist-tool-btn" data-shortcut="affinity_size_down" title="Brush Size - ([)">
+              <span class="tool-icon">📏</span>
+              <span class="tool-label">Size -</span>
+            </button>
+            <button class="artist-tool-btn" data-shortcut="affinity_size_up" title="Brush Size + (])">
+              <span class="tool-icon">📐</span>
+              <span class="tool-label">Size +</span>
+            </button>
+            <button class="artist-tool-btn" data-shortcut="affinity_color_picker" title="Eyedropper / Color Picker (I)">
+              <span class="tool-icon">🎨</span>
+              <span class="tool-label">Color</span>
+            </button>
+            <button class="artist-tool-btn" data-shortcut="affinity_zoom_fit" title="Fit to Screen (Ctrl+0)">
+              <span class="tool-icon">🔍</span>
+              <span class="tool-label">Fit</span>
+            </button>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -306,8 +377,8 @@
   <!-- Bottom Navigation Bar -->
   <nav class="bottom-nav">
     <button class="nav-item active" data-target="mirror">
-      <span class="nav-icon">🖥️</span>
-      <span class="nav-label">Mirror</span>
+      <span class="nav-icon">🎨</span>
+      <span class="nav-label">Draw Pad</span>
     </button>
     <button class="nav-item" data-target="touchpad">
       <span class="nav-icon">🖱️</span>

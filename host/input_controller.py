@@ -132,6 +132,7 @@ class InputController:
         """
         Absolute cursor placement with multi-monitor offset support.
         If monitor_rect is given: {left, top, width, height}, maps x and y relative to that monitor.
+        Synthesizes MOUSEEVENTF_MOVE to guarantee drawing apps receive smooth continuous strokes.
         """
         if monitor_rect:
             target_x = monitor_rect["left"] + int(x)
@@ -142,6 +143,23 @@ class InputController:
             clamped_x = max(0, min(w - 1, int(x)))
             clamped_y = max(0, min(h - 1, int(y)))
             user32.SetCursorPos(clamped_x, clamped_y)
+        user32.mouse_event(MOUSEEVENTF_MOVE, 0, 0, 0, 0)
+
+    def handle_pen_stroke(self, action, x, y, pressure=0.5, monitor_rect=None, buttons=1):
+        """
+        High-precision drawing stroke handler for Affinity and other creative apps.
+        action: 'down', 'move', 'up'
+        """
+        self.move_mouse_absolute(x, y, monitor_rect=monitor_rect)
+
+        if action == "down":
+            btn = "right" if (buttons == 2) else "left"
+            self.mouse_down(btn)
+        elif action == "move":
+            user32.mouse_event(MOUSEEVENTF_MOVE, 0, 0, 0, 0)
+        elif action == "up":
+            btn = "right" if (buttons == 2) else "left"
+            self.mouse_up(btn)
 
     def mouse_down(self, button='left'):
         flags = {
@@ -338,6 +356,44 @@ class InputController:
         elif action == "undo":
             self.send_key_event(VK_CONTROL, False)
             self.press_key(ord('Z'))
+            self.send_key_event(VK_CONTROL, True)
+        elif action == "redo":
+            self.send_key_event(VK_CONTROL, False)
+            self.press_key(ord('Y'))
+            self.send_key_event(VK_CONTROL, True)
+        elif action == "affinity_brush":
+            self.press_key(0x42) # B (Brush Tool)
+        elif action == "affinity_eraser":
+            self.press_key(0x45) # E (Eraser Tool)
+        elif action == "affinity_pen":
+            self.press_key(0x50) # P (Pen Tool)
+        elif action == "affinity_node":
+            self.press_key(0x41) # A (Node Tool)
+        elif action == "affinity_select":
+            self.press_key(0x56) # V (Move / Select Tool)
+        elif action == "affinity_hand":
+            self.press_key(0x48) # H (View / Hand Tool)
+        elif action == "affinity_hand_down":
+            self.send_key_event(VK_SPACE, is_up=False) # Hold Space to Pan
+        elif action == "affinity_hand_up":
+            self.send_key_event(VK_SPACE, is_up=True)
+        elif action == "affinity_color_picker":
+            self.press_key(0x49) # I (Color Picker)
+        elif action == "affinity_size_down":
+            self.press_key(0xDB) # [ (Decrease Brush Size)
+        elif action == "affinity_size_up":
+            self.press_key(0xDD) # ] (Increase Brush Size)
+        elif action == "affinity_zoom_in":
+            self.send_key_event(VK_CONTROL, False)
+            self.press_key(0xBB) # Ctrl + Plus
+            self.send_key_event(VK_CONTROL, True)
+        elif action == "affinity_zoom_out":
+            self.send_key_event(VK_CONTROL, False)
+            self.press_key(0xBD) # Ctrl + Minus
+            self.send_key_event(VK_CONTROL, True)
+        elif action == "affinity_zoom_fit":
+            self.send_key_event(VK_CONTROL, False)
+            self.press_key(0x30) # Ctrl + 0 (Zoom to Fit)
             self.send_key_event(VK_CONTROL, True)
         elif action == "select_all":
             self.send_key_event(VK_CONTROL, False)

@@ -105,10 +105,69 @@ class WebSocketClient {
 document.addEventListener('DOMContentLoaded', () => {
   const ws = new WebSocketClient();
 
-  // Screen Streamer
+  // Screen Streamer (Affinity Drawing Pad)
   const canvas = document.getElementById('screenCanvas');
-  const streamer = new ScreenStreamer(canvas, ws);
+  const overlayCanvas = document.getElementById('drawingOverlayCanvas');
+  const streamer = new ScreenStreamer(canvas, overlayCanvas, ws);
   ws.onBinary((data) => streamer.handleBinaryFrame(data));
+
+  // --- Drawing Pad & Pressure Meter Bindings ---
+  const pressureMeterFill = document.getElementById('pressureMeterFill');
+  const pressureValueText = document.getElementById('pressureValueText');
+
+  streamer.onPressureChange = (pressure) => {
+    const pct = Math.round(pressure * 100);
+    if (pressureMeterFill) pressureMeterFill.style.width = `${pct}%`;
+    if (pressureValueText) pressureValueText.textContent = `${pct}%`;
+  };
+
+  const btnTogglePalm = document.getElementById('btnTogglePalm');
+  const palmStatusText = document.getElementById('palmStatusText');
+  if (btnTogglePalm && palmStatusText) {
+    btnTogglePalm.addEventListener('click', () => {
+      const isStrict = !streamer.palmRejectionStrict;
+      streamer.setPalmRejection(isStrict);
+      btnTogglePalm.classList.toggle('active', isStrict);
+      palmStatusText.textContent = isStrict ? 'STRICT' : 'OFF';
+      showToast(isStrict ? '🖐️ Palm Rejection: STRICT (Stylus only draws)' : '🖐️ Palm Rejection: OFF (Finger draws too)');
+    });
+  }
+
+  // Artist Toolbar (Affinity Deck)
+  const artistToolbar = document.getElementById('artistToolbar');
+  const btnCollapseToolbar = document.getElementById('btnCollapseToolbar');
+  const btnSwitchDock = document.getElementById('btnSwitchDock');
+
+  if (btnCollapseToolbar && artistToolbar) {
+    btnCollapseToolbar.addEventListener('click', () => {
+      artistToolbar.classList.toggle('collapsed');
+    });
+  }
+
+  if (btnSwitchDock && artistToolbar) {
+    btnSwitchDock.addEventListener('click', () => {
+      const isLeft = artistToolbar.classList.contains('dock-left');
+      artistToolbar.classList.toggle('dock-left', !isLeft);
+      artistToolbar.classList.toggle('dock-right', isLeft);
+      showToast(isLeft ? 'Toolbar docked to Right' : 'Toolbar docked to Left');
+    });
+  }
+
+  // Active Tool Highlighting for Drawing buttons
+  const artistToolBtns = document.querySelectorAll('.artist-tool-btn');
+  artistToolBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const shortcut = btn.dataset.shortcut;
+      if (['affinity_brush', 'affinity_eraser', 'affinity_pen', 'affinity_node', 'affinity_select', 'affinity_hand'].includes(shortcut)) {
+        artistToolBtns.forEach((b) => {
+          if (['affinity_brush', 'affinity_eraser', 'affinity_pen', 'affinity_node', 'affinity_select', 'affinity_hand'].includes(b.dataset.shortcut)) {
+            b.classList.remove('active');
+          }
+        });
+        btn.classList.add('active');
+      }
+    });
+  });
 
   // Touchpad Controller
   const touchpadSurface = document.getElementById('touchpadSurface');
@@ -339,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateBrightnessUI(data.brightness);
     }
     if (currentTab === 'mirror') {
-      streamer.start(30, 65, 0.75);
+      streamer.start(45, 75, 0.85);
     }
   });
 
@@ -607,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnResetZoom = document.getElementById('btnResetZoom');
   if (btnResetZoom) {
     btnResetZoom.addEventListener('click', () => {
-      streamer.resetZoom();
+      streamer.resetView();
       showToast('Zoom reset (1x)');
     });
   }
@@ -646,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (target === 'mirror') {
-      streamer.start(30, 65, 0.75);
+      streamer.start(45, 75, 0.85);
     } else {
       streamer.stop();
     }
