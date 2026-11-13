@@ -46,24 +46,25 @@ jobs:
       - name: Publish Release to GitHub
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.4
-          name: "PC Remote v1.0.4 (Connection Hub & Multi-PC Troubleshooter)"
+          tag_name: v1.1.0
+          name: "PC Remote v1.1.0 (Affinity Drawing Pad & Stylus Revamp)"
           body: |
-            ## 📱 PC Remote & Screen Mirror for Android (v1.0.4)
-            Major connection and startup experience overhaul!
+            ## 🎨 PC Remote & Drawing Pad for Android (v1.1.0)
+            Major Drawing Pad revamp tailored for **Affinity Designer & Affinity Photo** on Windows with **Advan Sketsa 2 Stylus Pen**!
 
-            ### ✨ What's New in v1.0.4:
-            * **🚀 Brand New Connection Hub Dashboard**: Instant 0ms startup menu with live online/offline status for all your laptops!
-            * **🔄 Network Refresh & Live Ping**: Tap "Refresh" to test and detect reachable laptops in real-time.
-            * **🛡️ Windows Firewall Helper (`allow_firewall.bat`)**: 1-click script for Laptop #2 to open Port 5000 in 1 second.
-            * **🛠️ Built-in Troubleshooting Guide**: Step-by-step help right in the app if a laptop fails to connect.
-            * **🔑 Permanent Keystore Signing**: Eliminates "App not installed" update errors permanently.
-            * **🏠 Home / Hub Button & Back Navigation**: Press Back or tap the Hub icon anytime to return to your laptops menu.
+            ### ✨ What's New in v1.1.0:
+            * **🎨 Dedicated Affinity Drawing Pad (Screen Mirror Mode):** Mirror your laptop screen and draw directly in Affinity with 1:1 stylus alignment.
+            * **⚡ Hardware Stylus Pressure Sensitivity:** Real-time tracking of pen pressure (0.0 to 1.0) with a live visual pressure gauge.
+            * **🖐️ Strict Palm Rejection:** Rest your hand, wrist, and palm freely on the tablet screen while drawing without accidental brush strokes.
+            * **🎯 0ms Local Inking Feedback:** Smooth real-time local stroke trail rendered directly under the pen tip so sketching feels instantaneous.
+            * **🔍 Two-Finger Canvas Navigation:** Pinch-to-zoom and two-finger pan to zoom into fine details while drawing.
+            * **🎨 Floating Artist Toolbar:** Dockable (Left/Right) and minimizable palette with one-tap shortcuts for Affinity: Undo, Redo, Brush (`B`), Eraser (`E`), Pen (`P`), Node (`A`), Select (`V`), Pan/Hand (`H`/Space), Brush Size +/- (`[` / `]`), Eyedropper (`I`), and Fit Screen (`Ctrl+0`).
+            * **🚀 High-FPS & Low Latency Streaming:** 45-60 FPS low-latency canvas stream optimized for fluid digital art.
 
             ### 🚀 Quick Start
-            1. Download and install `PCRemote.apk` below on your tablet or phone.
-            2. On your laptops, run `start_server.bat` (and `allow_firewall.bat` if on a new laptop).
-            3. Open PC Remote on your tablet—your laptops will be tested and ready to connect!
+            1. Download and install `PCRemote.apk` below on your Advan Sketsa 2 tablet.
+            2. On your laptop, open Affinity (Designer or Photo) and launch `start_server.bat`.
+            3. Connect from your tablet and enjoy drawing directly on your Windows PC!
           files: |
             release-artifacts/PCRemote.apk
             allow_firewall.bat
